@@ -6,23 +6,27 @@ import type { WatchListing } from "./data/mockListings";
 function App() {
   const [searchQuery, setSearchQuery] = useState("");
 
+  const [pendingWatch, setPendingWatch] = useState<WatchListing | null>(null);
+
   const [lists, setLists] = useState<Record<string, WatchListing[]>>({
     "My List": []
   });
 
-  const saveToDefaultList = (watch: WatchListing) => {
+  const saveToList = (listName: string, watch: WatchListing) => {
     setLists((prev) => {
-      const existing = prev["My List"] || [];
+      const existing = prev[listName] || [];
   
       const exists = existing.find((w) => w.id === watch.id);
   
       return {
         ...prev,
-        "My List": exists
+        [listName]: exists
           ? existing.filter((w) => w.id !== watch.id)
           : [...existing, watch]
       };
     });
+  
+    setPendingWatch(null);
   };
 
   const isSaved = (id: string) =>
@@ -84,7 +88,7 @@ function App() {
             <ListingsGrid
             watches={filteredListings}
             isSaved={isSaved}
-            onSave={saveToDefaultList}
+            onSave={(watch) => setPendingWatch(watch)}
           />
           )}
         </>
@@ -103,15 +107,107 @@ function App() {
                 <ListingsGrid
                   watches={lists["My List"]}
                   isSaved={isSaved}
-                  onSave={saveToDefaultList}
+                  onSave={(watch) => setPendingWatch(watch)}
                 />
               </div>
             ))
           )}
         </>
       )}
+
+    {pendingWatch && (
+      <div style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: "rgba(0,0,0,0.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }}>
+        <div style={{
+          background: "white",
+          padding: 20,
+          borderRadius: 10,
+          width: 320
+        }}>
+          
+          <h3>Save Watch</h3>
+          <p style={{ fontSize: 12, color: "#666" }}>
+            Choose a list or create a new one
+          </p>
+
+          {/* EXISTING LISTS */}
+          {Object.keys(lists).map((listName) => (
+            <button
+              key={listName}
+              style={{
+                display: "block",
+                width: "100%",
+                marginBottom: 8
+              }}
+              onClick={() => saveToList(listName, pendingWatch)}
+            >
+              {listName}
+            </button>
+          ))}
+
+          {/* CREATE NEW LIST */}
+          <CreateListInput
+            onCreate={(name) => saveToList(name, pendingWatch)}
+          />
+
+          {/* CANCEL */}
+          <button
+            style={{ marginTop: 10 }}
+            onClick={() => setPendingWatch(null)}
+          >
+            Cancel
+          </button>
+
+        </div>
+      </div>
+    )}
+
     </div>
   );
+
+
+  function CreateListInput({
+    onCreate
+  }: {
+    onCreate: (name: string) => void;
+  }) {
+    const [value, setValue] = useState("");
+  
+    return (
+      <div style={{ marginTop: 10 }}>
+        <input
+          placeholder="New list name"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          style={{
+            width: "100%",
+            padding: 8,
+            marginBottom: 8
+          }}
+        />
+  
+        <button
+          onClick={() => {
+            if (!value.trim()) return;
+            onCreate(value.trim());
+            setValue("");
+          }}
+          style={{ width: "100%" }}
+        >
+          + Create List
+        </button>
+      </div>
+    );
+  }
 }
 
 export default App;

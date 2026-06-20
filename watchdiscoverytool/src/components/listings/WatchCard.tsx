@@ -4,23 +4,33 @@ type Props = {
   watch: WatchListing;
   isSaved: boolean;
   onSave: () => void;
+  lists: Record<string, WatchListing[]>;
 };
+
+
 
 export default function WatchCard({
   watch,
   isSaved,
-  onSave
-}: {
-  watch: WatchListing;
-  isSaved: boolean;
-  onSave: () => void;
-}) {
+  onSave,
+  lists
+}: Props) {
+  const savedInLists = Object.keys(lists ?? {}).filter((listName) =>
+    (lists?.[listName] ?? []).some((w) => w.id === watch.id)
+  );
+
   return (
     <div style={styles.card}>
       <img src={watch.imageUrl} alt={watch.title} style={styles.image} />
 
       <div style={styles.content}>
         <h3 style={styles.title}>{watch.title}</h3>
+
+        {savedInLists.length > 0 && (
+        <div style={{ fontSize: 11, color: "#666" }}>
+          Saved in: {savedInLists.join(", ")}
+        </div>
+         )}
 
         <p style={styles.meta}>
           {watch.marketplace.toUpperCase()} • {watch.condition}
@@ -31,14 +41,27 @@ export default function WatchCard({
         <p style={styles.desc}>{watch.description}</p>
 
         
-        <button onClick={onSave}>
-          {isSaved ? "Saved ✓" : "Save"}
-        </button>
+        <button
+          onClick={onSave}
+          style={{
+            marginTop: 8,
+            padding: "6px 10px",
+            borderRadius: 6,
+            border: "1px solid #ddd",
+            cursor: "pointer",
+            fontSize: 12,
+            background: isSaved ? "#111" : "#fff",
+            color: isSaved ? "#fff" : "#111"
+          }}
+        >
+          {isSaved ? "Saved ✓ (add to list)" : "Save"}
+      </button>
 
       </div>
     </div>
   );
 }
+
 
 const styles: Record<string, React.CSSProperties> = {
   card: {
