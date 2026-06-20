@@ -40,23 +40,23 @@ export default function WatchCard({
 
         <p style={styles.desc}>{watch.description}</p>
 
-        
-        <button
-          onClick={onSave}
-          style={{
-            marginTop: 8,
-            padding: "6px 10px",
-            borderRadius: 6,
-            border: "1px solid #ddd",
-            cursor: "pointer",
-            fontSize: 12,
-            background: isSaved ? "#111" : "#fff",
-            color: isSaved ? "#fff" : "#111"
-          }}
-        >
-          {isSaved ? "Saved ✓ (add to list)" : "Save"}
-      </button>
-
+          <div style={{marginTop: "auto"}}>
+            <button
+                onClick={onSave}
+                style={{
+                  marginTop: 8,
+                  padding: "6px 10px",
+                  borderRadius: 6,
+                  border: "1px solid #ddd",
+                  cursor: "pointer",
+                  fontSize: 12,
+                  background: isSaved ? "#111" : "#fff",
+                  color: isSaved ? "#fff" : "#111"
+                }}
+              >
+                {isSaved ? "Saved ✓ (add to list)" : "Save"}
+            </button>
+          </div>
       </div>
     </div>
   );
@@ -70,7 +70,8 @@ const styles: Record<string, React.CSSProperties> = {
     padding: 12,
     display: "flex",
     gap: 12,
-    background: "white"
+    background: "white",
+    minHeight: 180
   },
   image: {
     width: 80,
@@ -81,7 +82,8 @@ const styles: Record<string, React.CSSProperties> = {
   content: {
     display: "flex",
     flexDirection: "column",
-    gap: 4
+    gap: 4,
+    flex: 1
   },
   title: {
     fontSize: 14,
@@ -100,7 +102,11 @@ const styles: Record<string, React.CSSProperties> = {
   desc: {
     fontSize: 12,
     color: "#888",
-    margin: 0
+    margin: 0,
+    overflow: "hidden",
+    display: "-webkit-box",
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: "vertical"
   },
   button: {
     marginTop: 8,
