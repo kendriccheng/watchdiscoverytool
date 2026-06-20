@@ -3,14 +3,14 @@ import WatchCard from "./WatchCard";
 
 type Props = {
   watches: WatchListing[];
-  savedIds: string[];
-  onToggleSave: (id: string) => void;
+  isSaved: (id: string) => boolean;
+  onSave: (watch: WatchListing) => void;
 };
 
 export default function ListingsGrid({
   watches,
-  savedIds,
-  onToggleSave
+  isSaved,
+  onSave,
 }: Props) {
   return (
     <div style={styles.grid}>
@@ -18,8 +18,8 @@ export default function ListingsGrid({
         <WatchCard
           key={watch.id}
           watch={watch}
-          isSaved={savedIds.includes(watch.id)}
-          onToggleSave={onToggleSave}
+          isSaved={isSaved(watch.id)}
+          onSave={() => onSave(watch)}
         />
       ))}
     </div>
@@ -34,7 +34,3 @@ const styles: Record<string, React.CSSProperties> = {
     padding: 16
   }
 };
-
-
-
-

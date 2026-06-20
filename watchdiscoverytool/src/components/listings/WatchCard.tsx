@@ -3,14 +3,18 @@ import type { WatchListing } from "../../data/mockListings";
 type Props = {
   watch: WatchListing;
   isSaved: boolean;
-  onToggleSave: (id: string) => void;
+  onSave: () => void;
 };
 
 export default function WatchCard({
   watch,
   isSaved,
-  onToggleSave
-}: Props) {
+  onSave
+}: {
+  watch: WatchListing;
+  isSaved: boolean;
+  onSave: () => void;
+}) {
   return (
     <div style={styles.card}>
       <img src={watch.imageUrl} alt={watch.title} style={styles.image} />
@@ -26,16 +30,11 @@ export default function WatchCard({
 
         <p style={styles.desc}>{watch.description}</p>
 
-        <button
-          onClick={() => onToggleSave(watch.id)}
-          style={{
-            ...styles.button,
-            background: isSaved ? "#222" : "#eee",
-            color: isSaved ? "white" : "black"
-          }}
-        >
+        
+        <button onClick={onSave}>
           {isSaved ? "Saved ✓" : "Save"}
         </button>
+
       </div>
     </div>
   );

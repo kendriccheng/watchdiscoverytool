@@ -1,34 +1,32 @@
 import { useState } from "react";
 import ListingsGrid from "./components/listings/ListingsGrid";
 import { mockListings } from "./data/mockListings";
+import type { WatchListing } from "./data/mockListings";
 
 function App() {
-  const [savedIds, setSavedIds] = useState<string[]>([]);
-
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [lists, setLists] = useState<Record<string, string[]>>({
+  const [lists, setLists] = useState<Record<string, WatchListing[]>>({
     "My List": []
   });
 
-  const toggleSave = (id: string) => {
-    const isSaved = savedIds.includes(id);
-  
-    setSavedIds((prev) =>
-      isSaved ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  
+  const saveToDefaultList = (watch: WatchListing) => {
     setLists((prev) => {
-      const current = prev["My List"] || [];
+      const existing = prev["My List"] || [];
+  
+      const exists = existing.find((w) => w.id === watch.id);
   
       return {
         ...prev,
-        "My List": isSaved
-          ? current.filter((x) => x !== id)
-          : [...current, id]
+        "My List": exists
+          ? existing.filter((w) => w.id !== watch.id)
+          : [...existing, watch]
       };
     });
   };
+
+  const isSaved = (id: string) =>
+    lists["My List"]?.some((w) => w.id === id) ?? false;
 
   const [view, setView] = useState<"discover" | "lists">("discover");
 
@@ -84,10 +82,10 @@ function App() {
             </div>
           ) : (
             <ListingsGrid
-              watches={filteredListings}
-              savedIds={savedIds}
-              onToggleSave={toggleSave}
-            />
+            watches={filteredListings}
+            isSaved={isSaved}
+            onSave={saveToDefaultList}
+          />
           )}
         </>
       ) : (
@@ -103,9 +101,9 @@ function App() {
                 <h3 style={{ paddingLeft: 16 }}>{listName}</h3>
   
                 <ListingsGrid
-                  watches={mockListings.filter((w) => ids.includes(w.id))}
-                  savedIds={savedIds}
-                  onToggleSave={toggleSave}
+                  watches={lists["My List"]}
+                  isSaved={isSaved}
+                  onSave={saveToDefaultList}
                 />
               </div>
             ))
