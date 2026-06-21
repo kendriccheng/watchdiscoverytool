@@ -142,14 +142,46 @@ function App() {
       });
   };
 
+  const pillStyle = (active: boolean) => ({
+    padding: "6px 10px",
+    borderRadius: 999,
+    border: "1px solid #ddd",
+    fontSize: 12,
+    cursor: "pointer",
+    background: active ? "#111" : "#fff",
+    color: active ? "#fff" : "#111"
+  });
 
 
   return (
-    <div>
-      <h1 style={{ padding: 16 }}>Watch Discovery Tool</h1>
+    <div style={{
+      minHeight: "100vh",
+      width: "100%",
+      background: "#ECE4D7",
+      fontFamily: "system-ui, -apple-system, sans-serif"
+    }}>
+
+      <div style={{
+        padding: "16px",
+        background: "#E7dccb",
+        borderBottom: "1px solid #eee"
+      }}>
+        <h1 style={{
+          margin: 0,
+          fontSize: 40,
+          fontWeight: 600,
+          color: "black"
+        }}>
+          Watch Discovery Tool
+        </h1>
+      </div>
   
       {/* SEARCH */}
-      <div style={{ padding: "0 16px" }}>
+      <div style={{
+        margin: "12px 16px",
+        padding: 12,
+        borderRadius: 12
+      }}>
         <input
           type="text"
           placeholder="Search watches (Timex, vintage, Casio...)"
@@ -166,15 +198,25 @@ function App() {
           }}
         />
       </div>
-          
-      <div style={{
-        display: "flex",
-        gap: 8,
-        padding: "0 16px",
-        marginBottom: 12,
-        flexWrap: "wrap"
-      }}>
+
+      <div style={{ padding: "0 16px", marginBottom: 8, fontSize: 12, color: "#666" }}>
+        {applyFilters(mockListings).length} watches found
+      </div>
+
+
+    {/*FILTERS*/}    
+    <div style={{
+      position: "sticky",
+      top: 0,
+      zIndex: 10,
+      background: "#ddc8b7",
+      padding: "8px 16px",
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 8
+    }}>
         
+        {/*Condition Pills*/}
         <select
           value={filters.condition}
           onChange={(e) =>
@@ -187,7 +229,7 @@ function App() {
           <option value="broken">Broken</option>
         </select>
 
-
+        {/*Marketplace Pills*/}
         <select
           value={filters.marketplace}
           onChange={(e) =>
@@ -201,6 +243,8 @@ function App() {
           <option value="other">Other</option>
         </select>
 
+
+        {/*Sort Pills*/}
         <select
           value={filters.sort}
           onChange={(e) =>
@@ -211,6 +255,28 @@ function App() {
           <option value="price_low">Price: Low → High</option>
           <option value="price_high">Price: High → Low</option>
         </select>
+
+
+        {/*Clear Filter*/}
+        <button
+          onClick={() =>
+            setFilters({
+              condition: "all",
+              marketplace: "all",
+              sort: "none"
+            })
+          }
+          style={{
+            padding: "6px 10px",
+            borderRadius: 999,
+            border: "1px solid #eee",
+            background: "black",
+            fontSize: 12,
+            cursor: "pointer"
+          }}
+        >
+          Clear filters
+        </button>
 
       </div>
 
