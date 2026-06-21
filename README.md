@@ -9,7 +9,7 @@ This guide walks you through running the Watch Discovery Tool demo on your machi
 - Save watches to curated lists
 - Create and reuse saved searches (presets ship with the app; custom searches persist in your browser)
 
-For product context and build decisions, see the other docs in this folder (`PRD.md`, `Build spec.md`, etc.).
+For product context and build decisions, see the docs in `0. docs/` (`PRD.md`, `Build spec.md`, etc.).
 
 ---
 
@@ -35,12 +35,15 @@ npm -v
 
 ## Repository layout
 
-The git repository has a nested app folder. Run all npm commands from the **inner** `watchdiscoverytool` directory (the one that contains `package.json`).
+Documentation and setup instructions live at the **repo root**. The `watch-app/` folder contains only the React application — no README or product docs inside it.
+
+Run all npm commands from **`watch-app/`** (the folder that contains `package.json`).
 
 ```
 watchdiscoverytool/                 ← repo root (clone lands here)
-├── 0. docs/                        ← project docs (this file)
-└── watchdiscoverytool/             ← app root — run npm commands here
+├── README.md                       ← setup guide (this file)
+├── 0. docs/                        ← product & build documentation
+└── watch-app/                      ← application code — run npm commands here
     ├── package.json
     ├── src/
     └── ...
@@ -56,7 +59,7 @@ watchdiscoverytool/                 ← repo root (clone lands here)
 
 ```bash
 git clone https://github.com/kendriccheng/watchdiscoverytool.git
-cd watchdiscoverytool/watchdiscoverytool
+cd watchdiscoverytool/watch-app
 ```
 
 **Option B — You already have the folder**
@@ -64,7 +67,7 @@ cd watchdiscoverytool/watchdiscoverytool
 Open a terminal and go to the app directory:
 
 ```bash
-cd path/to/watchdiscoverytool/watchdiscoverytool
+cd path/to/watchdiscoverytool/watch-app
 ```
 
 ### 2. Install dependencies
@@ -97,7 +100,7 @@ Press `Ctrl+C` in the terminal where the dev server is running.
 
 ## Available npm scripts
 
-Run these from `watchdiscoverytool/watchdiscoverytool/`:
+Run these from `watchdiscoverytool/watch-app/`:
 
 | Command | Purpose |
 |---------|---------|
@@ -128,7 +131,7 @@ Install Node.js from [https://nodejs.org](https://nodejs.org) (LTS), then open a
 
 ### Errors when running `npm install` or `npm run dev`
 
-- Confirm you are in `watchdiscoverytool/watchdiscoverytool/` (the folder with `package.json`), not the repo root or `0. docs/`.
+- Confirm you are in `watchdiscoverytool/watch-app/` (the folder with `package.json`), not the repo root or `0. docs/`.
 - Upgrade Node to 18+ if you are on an older version.
 - Delete `node_modules` and reinstall:
 
@@ -178,12 +181,14 @@ npm run preview
 
 ## Related documentation
 
+All product docs are in `0. docs/` at the repo root:
+
 | Document | Contents |
 |----------|----------|
-| `project-requirements.md` | Original build brief |
-| `PRD.md` | Product requirements |
-| `Build spec.md` | Implementation plan and architecture notes |
-| `UX spec.md` | UX and interaction details |
+| `0. docs/project-requirements.md` | Original build brief |
+| `0. docs/PRD.md` | Product requirements |
+| `0. docs/Build spec.md` | Implementation plan and architecture notes |
+| `0. docs/UX spec.md` | UX and interaction details |
 
 ---
 
