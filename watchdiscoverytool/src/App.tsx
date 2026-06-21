@@ -34,6 +34,16 @@ function App() {
     );
   });
 
+  const deleteList = (listName: string) => {
+    if (listName === "Favorites") return; // protect system list
+  
+    setLists((prev) => {
+      const newLists = { ...prev };
+      delete newLists[listName];
+      return newLists;
+    });
+  };
+
   const toggleWatchInList = (listName: string, watch: WatchListing) => {
     setLists((prev) => {
       const list = prev[listName] || [];
@@ -85,10 +95,12 @@ function App() {
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{
             width: "100%",
-            padding: "10px",
+            maxWidth: "100%",
+            boxSizing: "border-box",
+            padding: "8px 10px",
+            marginBottom: 8,
             borderRadius: 8,
-            border: "1px solid #ddd",
-            marginBottom: 12
+            border: "1px solid #ddd"
           }}
         />
       </div>
@@ -130,7 +142,16 @@ function App() {
             </div>
           ) : (
             Object.entries(lists).map(([listName, ids]) => (
-              <div key={listName} style={{ marginBottom: 24 }}>
+              <div key={listName} style={{
+                display: "flex",
+                flexDirection: "column",
+                marginBottom: 10,
+                border: "1px solid #eee",
+                borderRadius: 10,
+                padding: 10,
+                background: "#fff"
+              }}
+              >
                 <h3 style={{ paddingLeft: 16 }}>{listName}</h3>
   
                 <ListingsGrid
@@ -159,19 +180,24 @@ function App() {
         justifyContent: "center"
       }}>
         <div style={{
-          background: "white",
-          padding: 16,
-          borderRadius: 12,
-          width: 420,
-          maxHeight: "80vh",
-          overflowY: "auto",
-          boxSizing: "border-box"
-        }}>
+            background: "white",
+            padding: 16,
+            borderRadius: 12,
+            width: "100%",
+            maxWidth: 420,
+            maxHeight: "80vh",
+            overflowY: "auto",
+            overflowX: "hidden",
+            boxSizing: "border-box"
+          }}>
           
-          <h3>Save Watch</h3>
-          <p style={{ fontSize: 12, color: "#666" }}>
-            Choose a list or create a new one
-          </p>
+          <div style={{ marginBottom: 12 }}>
+              <h3 style={{ margin: 0 }}>Save to list</h3>
+
+              <p style={{ fontSize: 12, color: "#666", marginTop: 6 }}>
+                Select a list or create a new one. You can save the same watch to multiple lists.
+              </p>
+          </div>
 
           <h4 style={{ fontSize: 13, marginTop: 16, marginBottom: 8 }}>
             Existing Lists
@@ -183,6 +209,8 @@ function App() {
               (w) => w.id === pendingWatch?.id
             );
 
+            const isEmpty = lists[listName]?.length === 0;
+
             return (
               <div
                 key={listName}
@@ -192,17 +220,19 @@ function App() {
                   marginBottom: 10
                 }}
               >
-                
+      
                 <button
                   style={{
                     width: "100%",
-                    padding: "10px 12px",
+                    padding: "10px",
                     borderRadius: 8,
                     border: "1px solid #eee",
-                    background: alreadySaved ? "#111" : "#fff",
+                    background: alreadySaved ? "#111" : "#fafafa",
                     color: alreadySaved ? "#fff" : "#111",
                     textAlign: "left",
-                    cursor: "pointer"
+                    cursor: "pointer",
+                    fontSize: 13,
+                    fontWeight: 500
                   }}
                   onClick={() => {
                     if (!pendingWatch) return;
@@ -214,9 +244,39 @@ function App() {
                     }
                   }}
                 >
-                  {listName}
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>{listName}</span>
+
+                  {alreadySaved && (
+                    <span style={{ fontSize: 11, opacity: 0.7 }}>
+                      Saved ✓
+                    </span>
+                  )}
+                </div>
                 </button>
+
+                
+                {/* ✅ DELETE BUTTON GOES HERE */}
+                {isEmpty && listName !== "Favorites" && (
+                  <button
+                    onClick={() => deleteList(listName)}
+                    style={{
+                      marginTop: 6,
+                      padding: "6px 10px",
+                      borderRadius: 6,
+                      border: "1px solid #f0f0f0",
+                      background: "#fff",
+                      color: "#999",
+                      fontSize: 12,
+                      cursor: "pointer"
+                    }}
+                  >
+                    Delete empty list
+                  </button>
+                )}
+
               </div>
+
             );
           })}
 
@@ -240,7 +300,7 @@ function App() {
             style={{ marginTop: 10 }}
             onClick={() => setPendingWatch(null)}
           >
-            Cancel
+            Close
           </button>
 
         </div>
@@ -259,15 +319,23 @@ function App() {
     const [value, setValue] = useState("");
   
     return (
-      <div style={{ marginTop: 10 }}>
+      <div style={{
+        marginTop: 14,
+        padding: 10,
+        border: "1px dashed #ddd",
+        borderRadius: 10
+      }}>
         <input
           placeholder="New list name"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           style={{
             width: "100%",
-            padding: 8,
-            marginBottom: 8
+            boxSizing: "border-box",
+            padding: "8px 10px",
+            borderRadius: 8,
+            border: "1px solid #ddd",
+            fontSize: 13
           }}
         />
   
@@ -277,7 +345,17 @@ function App() {
             onCreate(value.trim());
             setValue("");
           }}
-          style={{ width: "100%" }}
+          style={{
+            width: "100%",
+            marginTop: 8,
+            padding: "8px",
+            borderRadius: 8,
+            border: "none",
+            background: "#111",
+            color: "#fff",
+            fontSize: 13,
+            cursor: "pointer"
+          }}
         >
           + Create List
         </button>
