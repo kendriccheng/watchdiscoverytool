@@ -1,23 +1,45 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ListingsGrid from "./components/listings/ListingsGrid";
+import SavedSearchBar from "./components/discovery/SavedSearchBar";
+import SaveSearchModal from "./components/discovery/SaveSearchModal";
 import { mockListings } from "./data/mockListings";
 import type { WatchListing } from "./data/mockListings";
+import { useSavedSearches } from "./hooks/useSavedSearches";
+import type {
+  ConditionFilter,
+  DiscoveryFilters,
+  MarketplaceFilter,
+  SavedSearch,
+  SortFilter,
+} from "./types/savedSearch";
+import {
+  applySavedSearch,
+  clearDiscoveryState,
+  DEFAULT_DISCOVERY_FILTERS,
+  discoveryStateMatchesSavedSearch,
+  matchesConditionFilter,
+} from "./utils/discoveryState";
 
 function App() {
+  const { allSavedSearches, getSearchById, saveSearch, deleteSearch } =
+    useSavedSearches();
+
   const [searchQuery, setSearchQuery] = useState("");
 
   const [pendingWatch, setPendingWatch] = useState<WatchListing | null>(null);
+  const [showSaveSearchModal, setShowSaveSearchModal] = useState(false);
 
   const [lists, setLists] = useState<Record<string, WatchListing[]>>({
     "Favorites": []
   });
 
-  const [filters, setFilters] = useState({
-    condition: "all",
-    marketplace: "all",
-    sort: "none",
-    maxPrice: ""
+  const [filters, setFilters] = useState<DiscoveryFilters>({
+    ...DEFAULT_DISCOVERY_FILTERS,
   });
+
+  const [activeSavedSearchId, setActiveSavedSearchId] = useState<string | null>(
+    null
+  );
 
   const isSaved = (watchId: string) =>
     Object.values(lists)
@@ -32,6 +54,98 @@ function App() {
   const [view, setView] = useState<"discover" | "lists">("discover");
   
   const [shippingLocation, setShippingLocation] = useState("");
+
+  const activeSavedSearch = activeSavedSearchId
+    ? getSearchById(activeSavedSearchId)
+    : undefined;
+
+  const discoveryState = {
+    searchQuery,
+    filters,
+    shippingLocation,
+  };
+
+  useEffect(() => {
+    if (!activeSavedSearchId) return;
+
+    const activeSearch = getSearchById(activeSavedSearchId);
+    if (!activeSearch) {
+      setActiveSavedSearchId(null);
+      return;
+    }
+
+    if (!discoveryStateMatchesSavedSearch(discoveryState, activeSearch)) {
+      setActiveSavedSearchId(null);
+    }
+  }, [
+    searchQuery,
+    filters,
+    shippingLocation,
+    activeSavedSearchId,
+    getSearchById,
+  ]);
+
+  const handleApplySavedSearch = (search: SavedSearch) => {
+    const next = applySavedSearch(search);
+    setSearchQuery(next.searchQuery);
+    setFilters(next.filters);
+    setShippingLocation(next.shippingLocation);
+    setActiveSavedSearchId(search.id);
+  };
+
+  const handleClearDiscovery = () => {
+    const cleared = clearDiscoveryState();
+    setSearchQuery(cleared.searchQuery);
+    setFilters(cleared.filters);
+    setShippingLocation(cleared.shippingLocation);
+    setActiveSavedSearchId(null);
+  };
+
+  const isDefaultDiscoveryState =
+    searchQuery === "" &&
+    shippingLocation === "" &&
+    filters.condition === DEFAULT_DISCOVERY_FILTERS.condition &&
+    filters.marketplace === DEFAULT_DISCOVERY_FILTERS.marketplace &&
+    filters.sort === DEFAULT_DISCOVERY_FILTERS.sort &&
+    filters.maxPrice === DEFAULT_DISCOVERY_FILTERS.maxPrice;
+
+  const matchesExistingSavedSearch = useMemo(
+    () =>
+      allSavedSearches.some((search) =>
+        discoveryStateMatchesSavedSearch(discoveryState, search)
+      ),
+    [allSavedSearches, searchQuery, filters, shippingLocation]
+  );
+
+  const showSaveCurrentSearch =
+    !isDefaultDiscoveryState && !matchesExistingSavedSearch;
+
+  const isCustomSearch =
+    !activeSavedSearchId && !isDefaultDiscoveryState;
+
+  const handleSaveDiscoveryLens = (input: {
+    name: string;
+    description?: string;
+  }) => {
+    const newSearch = saveSearch({
+      name: input.name,
+      description: input.description,
+      searchQuery,
+      filters,
+      shippingLocation,
+    });
+
+    setActiveSavedSearchId(newSearch.id);
+    setShowSaveSearchModal(false);
+  };
+
+  const handleDeleteSavedSearch = (id: string) => {
+    deleteSearch(id);
+
+    if (activeSavedSearchId === id) {
+      setActiveSavedSearchId(null);
+    }
+  };
 
   const hasPostalCode = shippingLocation?.trim().length > 0;
 
@@ -77,8 +191,10 @@ function App() {
       watch.marketplace.toLowerCase().includes(q) ||
       watch.description.toLowerCase().includes(q);
 
-    const matchesCondition =
-      filters.condition === "all" || watch.condition === filters.condition;
+    const matchesCondition = matchesConditionFilter(
+      watch.condition,
+      filters.condition
+    );
 
     const matchesMarketplace =
       filters.marketplace === "all" || watch.marketplace === filters.marketplace;
@@ -244,8 +360,23 @@ function App() {
         />
       </div>
 
+      {view === "discover" && (
+        <SavedSearchBar
+          savedSearches={allSavedSearches}
+          activeSavedSearchId={activeSavedSearchId}
+          onApply={handleApplySavedSearch}
+          onSaveCurrentSearch={() => setShowSaveSearchModal(true)}
+          onDelete={handleDeleteSavedSearch}
+          showSaveCurrentSearch={showSaveCurrentSearch}
+          isCustomSearch={isCustomSearch}
+        />
+      )}
+
       <div style={{ padding: "0 16px", marginBottom: 8, fontSize: 12, color: "#666" }}>
         {filteredListings.length} watches found
+        {activeSavedSearch && (
+          <span> · Lens: {activeSavedSearch.name}</span>
+        )}
       </div>
 
 
@@ -265,10 +396,14 @@ function App() {
         <select
           value={filters.condition}
           onChange={(e) =>
-            setFilters(prev => ({ ...prev, condition: e.target.value }))
+            setFilters((prev) => ({
+              ...prev,
+              condition: e.target.value as ConditionFilter,
+            }))
           }
         >
           <option value="all">All Conditions</option>
+          <option value="not_broken">Not Broken</option>
           <option value="working">Working</option>
           <option value="untested">Untested</option>
           <option value="broken">Broken</option>
@@ -278,7 +413,10 @@ function App() {
         <select
           value={filters.marketplace}
           onChange={(e) =>
-            setFilters(prev => ({ ...prev, marketplace: e.target.value }))
+            setFilters((prev) => ({
+              ...prev,
+              marketplace: e.target.value as MarketplaceFilter,
+            }))
           }
         >
           <option value="all">All Marketplaces</option>
@@ -293,7 +431,10 @@ function App() {
         <select
           value={filters.sort}
           onChange={(e) =>
-            setFilters(prev => ({ ...prev, sort: e.target.value }))
+            setFilters((prev) => ({
+              ...prev,
+              sort: e.target.value as SortFilter,
+            }))
           }
         >
           <option value="none">Sort: Default</option>
@@ -321,14 +462,7 @@ function App() {
 
         {/*Clear Filter*/}
         <button
-          onClick={() =>
-            setFilters({
-              condition: "all",
-              marketplace: "all",
-              sort: "none",
-              maxPrice: ""
-            })
-          }
+          onClick={handleClearDiscovery}
           style={{
             padding: "6px 10px",
             borderRadius: 999,
@@ -405,6 +539,14 @@ function App() {
           )}
         </>
       )}
+
+    {showSaveSearchModal && (
+      <SaveSearchModal
+        discoveryState={discoveryState}
+        onSave={handleSaveDiscoveryLens}
+        onClose={() => setShowSaveSearchModal(false)}
+      />
+    )}
 
     {pendingWatch && (
       <div style={{
