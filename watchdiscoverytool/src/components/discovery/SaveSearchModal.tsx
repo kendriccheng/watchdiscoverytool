@@ -1,5 +1,13 @@
 import { useState } from "react";
 import type { DiscoveryState } from "../../types/savedSearch";
+import {
+  Button,
+  Field,
+  FieldLabel,
+  Input,
+  Modal,
+  Tag,
+} from "../ui";
 
 type Props = {
   discoveryState: DiscoveryState;
@@ -37,67 +45,43 @@ export default function SaveSearchModal({
     discoveryState.shippingLocation
       ? `Ship to: ${discoveryState.shippingLocation}`
       : null,
-  ].filter(Boolean);
+  ].filter(Boolean) as string[];
+
+  const canSave = name.trim().length > 0;
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: "rgba(0,0,0,0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 20,
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          background: "white",
-          padding: 16,
-          borderRadius: 12,
-          width: "100%",
-          maxWidth: 420,
-          boxSizing: "border-box",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3 style={{ margin: 0 }}>Save discovery lens</h3>
-        <p style={{ fontSize: 12, color: "#666", marginTop: 6 }}>
-          Save your current filters and search as a reusable lens you can apply
-          with one click.
-        </p>
-
-        {summaryParts.length > 0 && (
-          <p
-            style={{
-              fontSize: 12,
-              color: "#888",
-              margin: "12px 0",
-              textAlign: "left",
-            }}
+    <Modal
+      title="Save discovery lens"
+      description="Save your current filters and search as a reusable lens you can apply with one click."
+      onClose={onClose}
+      footer={
+        <>
+          <Button
+            variant="primary"
+            block
+            disabled={!canSave}
+            onClick={handleSubmit}
           >
-            {summaryParts.join(" · ")}
-          </p>
-        )}
+            Save lens
+          </Button>
+          <Button variant="secondary" block onClick={onClose}>
+            Cancel
+          </Button>
+        </>
+      }
+    >
+      {summaryParts.length > 0 && (
+        <div className="tag-list">
+          {summaryParts.map((part) => (
+            <Tag key={part}>{part}</Tag>
+          ))}
+        </div>
+      )}
 
-        <label
-          style={{
-            display: "block",
-            fontSize: 12,
-            fontWeight: 600,
-            color: "#666",
-            marginBottom: 4,
-            textAlign: "left",
-          }}
-        >
-          Name
-        </label>
-        <input
+      <Field>
+        <FieldLabel htmlFor="lens-name">Name</FieldLabel>
+        <Input
+          id="lens-name"
           autoFocus
           placeholder="e.g. Timex — flexible budget"
           value={name}
@@ -105,78 +89,20 @@ export default function SaveSearchModal({
           onKeyDown={(e) => {
             if (e.key === "Enter") handleSubmit();
           }}
-          style={{
-            width: "100%",
-            boxSizing: "border-box",
-            padding: "8px 10px",
-            borderRadius: 8,
-            border: "1px solid #ddd",
-            fontSize: 13,
-            marginBottom: 12,
-          }}
         />
+      </Field>
 
-        <label
-          style={{
-            display: "block",
-            fontSize: 12,
-            fontWeight: 600,
-            color: "#666",
-            marginBottom: 4,
-            textAlign: "left",
-          }}
-        >
+      <Field>
+        <FieldLabel htmlFor="lens-description">
           Description (optional)
-        </label>
-        <input
+        </FieldLabel>
+        <Input
+          id="lens-description"
           placeholder="What is this lens for?"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          style={{
-            width: "100%",
-            boxSizing: "border-box",
-            padding: "8px 10px",
-            borderRadius: 8,
-            border: "1px solid #ddd",
-            fontSize: 13,
-            marginBottom: 16,
-          }}
         />
-
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!name.trim()}
-            style={{
-              flex: 1,
-              padding: "8px",
-              borderRadius: 8,
-              border: "none",
-              background: name.trim() ? "#111" : "#ccc",
-              color: "#fff",
-              fontSize: 13,
-              cursor: name.trim() ? "pointer" : "not-allowed",
-            }}
-          >
-            Save lens
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              padding: "8px 16px",
-              borderRadius: 8,
-              border: "1px solid #ddd",
-              background: "#fff",
-              fontSize: 13,
-              cursor: "pointer",
-            }}
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
+      </Field>
+    </Modal>
   );
 }

@@ -1,4 +1,5 @@
 import type { SavedSearch } from "../../types/savedSearch";
+import { Button, SectionLabel } from "../ui";
 
 type Props = {
   savedSearches: SavedSearch[];
@@ -24,117 +25,67 @@ export default function SavedSearchBar({
   );
 
   return (
-    <div style={{ padding: "0 16px", marginBottom: 8 }}>
-      <div
-        style={{
-          fontSize: 12,
-          fontWeight: "bold",
-          color: "#666",
-          marginBottom: 6,
-          textAlign: "left",
-        }}
-      >
-        Discovery lenses
-      </div>
+    <div className="saved-search-bar">
+      <SectionLabel>Discovery lenses</SectionLabel>
 
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 8,
-          alignItems: "center",
-        }}
-      >
+      <div className="saved-search-bar__pills">
         {savedSearches.map((search) => {
           const isActive = search.id === activeSavedSearchId;
           const canDelete = !search.isPreset && onDelete;
 
           return (
-            <div
-              key={search.id}
-              style={{ display: "flex", alignItems: "center", gap: 4 }}
-            >
-              <button
+            <div key={search.id} className="saved-search-bar__pill-group">
+              <Button
                 type="button"
+                pill
+                sm
+                active={isActive}
+                className="saved-search-bar__lens-btn"
                 onClick={() => onApply(search)}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: 999,
-                  border: "1px solid #ddd",
-                  fontSize: 12,
-                  cursor: "pointer",
-                  background: isActive ? "#111" : "#fff",
-                  color: isActive ? "#fff" : "#111",
-                  fontWeight: isActive ? 600 : 400,
-                }}
               >
-                {search.name}
-              </button>
+                <span className="saved-search-bar__lens-name">{search.name}</span>
+                {search.isPreset && (
+                  <span className="lens-badge">Preset</span>
+                )}
+              </Button>
 
               {canDelete && (
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  className="btn--delete-lens"
                   aria-label={`Delete ${search.name}`}
                   onClick={() => onDelete(search.id)}
-                  style={{
-                    padding: "2px 6px",
-                    borderRadius: 999,
-                    border: "1px solid #eee",
-                    fontSize: 11,
-                    cursor: "pointer",
-                    background: "#fff",
-                    color: "#999",
-                    lineHeight: 1,
-                  }}
                 >
                   ×
-                </button>
+                </Button>
               )}
             </div>
           );
         })}
 
         {showSaveCurrentSearch && onSaveCurrentSearch && (
-          <button
+          <Button
             type="button"
+            pill
+            sm
+            dashed
+            className="saved-search-bar__save-btn"
             onClick={onSaveCurrentSearch}
-            style={{
-              padding: "6px 12px",
-              borderRadius: 999,
-              border: "1px dashed #999",
-              fontSize: 12,
-              cursor: "pointer",
-              background: "#fafafa",
-              color: "#111",
-            }}
           >
             + Save current search
-          </button>
+          </Button>
         )}
       </div>
 
       {activeSearch?.description && (
-        <p
-          style={{
-            margin: "6px 0 0",
-            fontSize: 12,
-            color: "#666",
-            textAlign: "left",
-          }}
-        >
+        <p className="saved-search-bar__hint saved-search-bar__hint--active">
           {activeSearch.description}
         </p>
       )}
 
       {isCustomSearch && !activeSearch && (
-        <p
-          style={{
-            margin: "6px 0 0",
-            fontSize: 12,
-            color: "#666",
-            textAlign: "left",
-          }}
-        >
+        <p className="saved-search-bar__hint">
           Custom search — adjust filters or save this lens for next time.
         </p>
       )}

@@ -1,7 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import ListingsGrid from "./components/listings/ListingsGrid";
+import ListSection from "./components/listings/ListSection";
+import SaveToListModal from "./components/listings/SaveToListModal";
 import SavedSearchBar from "./components/discovery/SavedSearchBar";
 import SaveSearchModal from "./components/discovery/SaveSearchModal";
+import {
+  Button,
+  EmptyState,
+  FieldLabel,
+  Input,
+  Select,
+  Tab,
+  TabBar,
+} from "./components/ui";
 import { mockListings } from "./data/mockListings";
 import type { WatchListing } from "./data/mockListings";
 import { useSavedSearches } from "./hooks/useSavedSearches";
@@ -14,11 +25,10 @@ import type {
 } from "./types/savedSearch";
 import {
   applySavedSearch,
-  clearDiscoveryState,
   DEFAULT_DISCOVERY_FILTERS,
   discoveryStateMatchesSavedSearch,
-  matchesConditionFilter,
 } from "./utils/discoveryState";
+import { filterAndSortDiscoveryListings } from "./utils/filterAndSortWatches";
 
 function App() {
   const { allSavedSearches, getSearchById, saveSearch, deleteSearch } =
@@ -46,11 +56,6 @@ function App() {
       .flat()
       .some((w) => w.id === watchId);
 
-  const getWatchLists = (watchId: string) =>
-    Object.keys(lists).filter((listName) =>
-      lists[listName].some((w) => w.id === watchId)
-    );
- 
   const [view, setView] = useState<"discover" | "lists">("discover");
   
   const [shippingLocation, setShippingLocation] = useState("");
@@ -93,13 +98,26 @@ function App() {
     setActiveSavedSearchId(search.id);
   };
 
-  const handleClearDiscovery = () => {
-    const cleared = clearDiscoveryState();
-    setSearchQuery(cleared.searchQuery);
-    setFilters(cleared.filters);
-    setShippingLocation(cleared.shippingLocation);
+  const handleClearFilters = () => {
+    setFilters({ ...DEFAULT_DISCOVERY_FILTERS });
+  };
+
+  const handleResetDiscovery = () => {
+    setSearchQuery("");
+    setShippingLocation("");
+    setFilters({ ...DEFAULT_DISCOVERY_FILTERS });
     setActiveSavedSearchId(null);
   };
+
+  const hasActiveFilters =
+    filters.condition !== DEFAULT_DISCOVERY_FILTERS.condition ||
+    filters.marketplace !== DEFAULT_DISCOVERY_FILTERS.marketplace ||
+    filters.sort !== DEFAULT_DISCOVERY_FILTERS.sort ||
+    filters.maxPrice !== DEFAULT_DISCOVERY_FILTERS.maxPrice;
+
+  const listsWithWatches = Object.entries(lists).filter(
+    ([, watches]) => watches.length > 0
+  );
 
   const isDefaultDiscoveryState =
     searchQuery === "" &&
@@ -168,60 +186,28 @@ function App() {
     return Math.round(base * multiplier);
   };
 
-  const enrichWatch = (watch: WatchListing) => {
-    const shippingCost = hasPostalCode
-      ? getShippingCost(watch.shipping, shippingLocation)
-      : null;
+  const enrichWatch = useCallback(
+    (watch: WatchListing) => {
+      const shippingCost = hasPostalCode
+        ? getShippingCost(watch.shipping, shippingLocation)
+        : null;
 
-    return {
-      ...watch,
-      shipping: shippingCost,
-      totalCost: watch.price + (shippingCost ?? 0)
-    };
-  };
+      return {
+        ...watch,
+        shipping: shippingCost,
+        totalCost: watch.price + (shippingCost ?? 0),
+      };
+    },
+    [hasPostalCode, shippingLocation]
+  );
 
   const enrichedListings = mockListings.map(enrichWatch);
 
-  // Filter and sort on shipping-enriched listings
-  const filteredListings = enrichedListings.filter((watch) => {
-    const q = searchQuery.toLowerCase();
-
-    const matchesSearch =
-      watch.title.toLowerCase().includes(q) ||
-      watch.marketplace.toLowerCase().includes(q) ||
-      watch.description.toLowerCase().includes(q);
-
-    const matchesCondition = matchesConditionFilter(
-      watch.condition,
-      filters.condition
-    );
-
-    const matchesMarketplace =
-      filters.marketplace === "all" || watch.marketplace === filters.marketplace;
-
-    const maxPrice =
-      filters.maxPrice === "" ? null : Number(filters.maxPrice);
-
-    const matchesMaxPrice =
-      maxPrice === null ||
-      Number.isNaN(maxPrice) ||
-      watch.totalCost <= maxPrice;
-
-    return matchesSearch && matchesCondition && matchesMarketplace && matchesMaxPrice;
-  })
-  .sort((a, b) => {
-    switch (filters.sort) {
-      case "price_low":
-        return a.totalCost - b.totalCost;
-
-      case "price_high":
-        return b.totalCost - a.totalCost;
-
-      case "none":
-      default:
-        return 0;
-    }
-  });
+  const filteredListings = filterAndSortDiscoveryListings(
+    enrichedListings,
+    searchQuery,
+    filters
+  );
 
   const deleteList = (listName: string) => {
     if (listName === "Favorites") return; // protect system list
@@ -261,284 +247,268 @@ function App() {
   const removeFromList = (listName: string, watch: WatchListing) => {
     setLists((prev) => {
       const list = prev[listName] || [];
-  
+
       return {
         ...prev,
-        [listName]: list.filter((w) => w.id !== watch.id)
+        [listName]: list.filter((w) => w.id !== watch.id),
       };
     });
   };
 
+  const clearList = (listName: string) => {
+    setLists((prev) => ({
+      ...prev,
+      [listName]: [],
+    }));
+  };
 
-  const pillStyle = (active: boolean) => ({
-    padding: "6px 10px",
-    borderRadius: 999,
-    border: "1px solid #ddd",
-    fontSize: 12,
-    cursor: "pointer",
-    background: active ? "#111" : "#fff",
-    color: active ? "#fff" : "#111"
-  });
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      width: "100%",
-      background: "#ECE4D7",
-      fontFamily: "system-ui, -apple-system, sans-serif"
-    }}>
-
-      <div style={{
-        padding: "16px",
-        background: "#E7dccb",
-        borderBottom: "1px solid #eee"
-      }}>
-        <h1 style={{
-          margin: 0,
-          fontSize: 40,
-          fontWeight: 600,
-          color: "black"
-        }}>
-          Watch Discovery Tool
-        </h1>
-      </div>
-
-
-      {/* SHIPPING INPUT */}
-      <div style={{ padding: "0 16px", marginBottom: 6 }}>
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: "bold",
-            color: "#666",
-            marginBottom: 4,
-            textAlign: "left"
-          }}
-        >
-          Enter a Shipping destination (for estimated delivery cost)
+    <div className="app-shell">
+      <header className="app-header">
+        <div className="app-content app-header__inner">
+          <div className="app-header__top">
+            <div>
+              <h1>Watch Discovery Tool</h1>
+              <p className="app-header__subtitle">
+                Discover vintage Timex and interesting watches across eBay, Etsy,
+                and more — with shipping estimates to your door.
+              </p>
+            </div>
+            <TabBar>
+              <Tab
+                active={view === "discover"}
+                onClick={() => setView("discover")}
+              >
+                Discover
+              </Tab>
+              <Tab
+                active={view === "lists"}
+                onClick={() => setView("lists")}
+              >
+                My Lists
+              </Tab>
+            </TabBar>
+          </div>
         </div>
-
-        <input
-          value={shippingLocation}
-          onChange={(e) => setShippingLocation(e.target.value)}
-          placeholder="Enter a postal code, e.g. A1A 2B3"
-          style={{
-            width: 180,             
-            padding: "6px 10px",
-            borderRadius: 8,
-            border: "1px solid #ddd",
-            fontSize: 12,
-            display: "block"         
-          }}
-        />
-      </div>
-
-      {/* SEARCH */}
-      <div style={{ padding: "0 16px", marginBottom: 8 }}>
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: "bold",
-            color: "#666",
-            marginBottom: 4,
-            textAlign: "left"
-          }}
-        >
-          Search for your watch
-        </div>
-        <input
-          type="text"
-          placeholder="Search watches (Seiko, vintage, Casio...)"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "6px 10px",
-            borderRadius: 8,
-            border: "1px solid #ddd"
-          }}
-        />
-      </div>
+      </header>
 
       {view === "discover" && (
-        <SavedSearchBar
-          savedSearches={allSavedSearches}
-          activeSavedSearchId={activeSavedSearchId}
-          onApply={handleApplySavedSearch}
-          onSaveCurrentSearch={() => setShowSaveSearchModal(true)}
-          onDelete={handleDeleteSavedSearch}
-          showSaveCurrentSearch={showSaveCurrentSearch}
-          isCustomSearch={isCustomSearch}
-        />
-      )}
-
-      <div style={{ padding: "0 16px", marginBottom: 8, fontSize: 12, color: "#666" }}>
-        {filteredListings.length} watches found
-        {activeSavedSearch && (
-          <span> · Lens: {activeSavedSearch.name}</span>
-        )}
-      </div>
-
-
-    {/*FILTERS*/}    
-    <div style={{
-      position: "sticky",
-      top: 0,
-      zIndex: 10,
-      background: "#ddc8b7",
-      padding: "8px 16px",
-      display: "flex",
-      flexWrap: "wrap",
-      gap: 8
-    }}>
-        
-        {/*Condition Pills*/}
-        <select
-          value={filters.condition}
-          onChange={(e) =>
-            setFilters((prev) => ({
-              ...prev,
-              condition: e.target.value as ConditionFilter,
-            }))
-          }
-        >
-          <option value="all">All Conditions</option>
-          <option value="not_broken">Not Broken</option>
-          <option value="working">Working</option>
-          <option value="untested">Untested</option>
-          <option value="broken">Broken</option>
-        </select>
-
-        {/*Marketplace Pills*/}
-        <select
-          value={filters.marketplace}
-          onChange={(e) =>
-            setFilters((prev) => ({
-              ...prev,
-              marketplace: e.target.value as MarketplaceFilter,
-            }))
-          }
-        >
-          <option value="all">All Marketplaces</option>
-          <option value="ebay">eBay</option>
-          <option value="etsy">Etsy</option>
-          <option value="chrono24">Chrono24</option>
-          <option value="other">Other</option>
-        </select>
-
-
-        {/*Sort Pills*/}
-        <select
-          value={filters.sort}
-          onChange={(e) =>
-            setFilters((prev) => ({
-              ...prev,
-              sort: e.target.value as SortFilter,
-            }))
-          }
-        >
-          <option value="none">Sort: Default</option>
-          <option value="price_low">Price: Low → High</option>
-          <option value="price_high">Price: High → Low</option>
-        </select>
-
-        <input
-          type="number"
-          min={0}
-          placeholder="Max total ($)"
-          value={filters.maxPrice}
-          onChange={(e) =>
-            setFilters((prev) => ({ ...prev, maxPrice: e.target.value }))
-          }
-          style={{
-            width: 100,
-            padding: "6px 10px",
-            borderRadius: 8,
-            border: "1px solid #ddd",
-            fontSize: 12
-          }}
-        />
-
-
-        {/*Clear Filter*/}
-        <button
-          onClick={handleClearDiscovery}
-          style={{
-            padding: "6px 10px",
-            borderRadius: 999,
-            border: "1px solid #eee",
-            background: "black",
-            fontSize: 12,
-            cursor: "pointer"
-          }}
-        >
-          Clear filters
-        </button>
-
-      </div>
-
-
-      {/* NAV */}
-      <div style={{ display: "flex", gap: 12, padding: 16 }}>
-        <button onClick={() => setView("discover")}>
-          Discover
-        </button>
-  
-        <button onClick={() => setView("lists")}>
-          My Lists
-        </button>
-      </div>
-  
-      {/* VIEW SWITCH */}
-      {view === "discover" ? (
         <>
-          {filteredListings.length === 0 ? (
-            <div style={{ padding: 16, color: "#666" }}>
-              <h3>No watches found</h3>
-              <p>Try searching for “Seiko”, “vintage”, or “Casio”.</p>
-            </div>
-          ) : (
-            <ListingsGrid
-              watches={filteredListings}
-              isSaved={isSaved}
-              onSave={(watch) => setPendingWatch(watch)}
-              lists={lists}
-            />
-          )}
-        </>
-      ) : (
-        <>
-          {Object.values(lists).every((arr) => arr.length === 0) ? (
-            <div style={{ padding: 16, color: "#666" }}>
-              <h3>No saved watches yet</h3>
-              <p>Go to Discover and click “Save” on watches you like.</p>
-            </div>
-          ) : (
-            Object.entries(lists).map(([listName, ids]) => (
-              <div key={listName} style={{
-                display: "flex",
-                flexDirection: "column",
-                marginBottom: 10,
-                border: "1px solid #eee",
-                borderRadius: 10,
-                padding: 10,
-                background: "#ECE4D7"
-              }}
-              >
-                <h3 style={{ paddingLeft: 16, color: "black", margin: 0 }}>{listName}</h3>
-  
-                <ListingsGrid
-                  watches={lists[listName].map(enrichWatch)}
-                  isSaved={isSaved}
-                  onSave={(watch) => setPendingWatch(watch)}
-                  onRemove={(watch) => removeFromList(listName, watch)}
-                  lists={lists}
+          <div className="app-content section">
+            <div className="search-panel surface-card">
+              <div className="search-row">
+                <FieldLabel
+                  htmlFor="watch-search"
+                  className="search-row__label search-row__label--search"
+                >
+                  Search for your watch
+                </FieldLabel>
+                <FieldLabel
+                  htmlFor="shipping-location"
+                  className="search-row__label search-row__label--shipping"
+                >
+                  Shipping destination
+                </FieldLabel>
+                <Input
+                  id="watch-search"
+                  className="search-row__input search-row__input--search"
+                  type="text"
+                  placeholder="Seiko, vintage, Casio..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <Input
+                  id="shipping-location"
+                  className="search-row__input search-row__input--shipping"
+                  placeholder="Postal code, e.g. M6K 1V8"
+                  value={shippingLocation}
+                  onChange={(e) => setShippingLocation(e.target.value)}
                 />
               </div>
-            ))
-          )}
+            </div>
+          </div>
+
+          <div className="app-content section section--tight">
+            <SavedSearchBar
+              savedSearches={allSavedSearches}
+              activeSavedSearchId={activeSavedSearchId}
+              onApply={handleApplySavedSearch}
+              onSaveCurrentSearch={() => setShowSaveSearchModal(true)}
+              onDelete={handleDeleteSavedSearch}
+              showSaveCurrentSearch={showSaveCurrentSearch}
+              isCustomSearch={isCustomSearch}
+            />
+          </div>
+
+          <div className="filter-bar">
+            <div className="app-content filter-bar__inner">
+              <span className="filter-bar__label">Filters</span>
+              <div className="filter-bar__controls">
+                <Select
+                  sm
+                  filter
+                  value={filters.condition}
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      condition: e.target.value as ConditionFilter,
+                    }))
+                  }
+                >
+                  <option value="all">All Conditions</option>
+                  <option value="not_broken">Not Broken</option>
+                  <option value="working">Working</option>
+                  <option value="untested">Untested</option>
+                  <option value="broken">Broken</option>
+                </Select>
+
+                <Select
+                  sm
+                  filter
+                  value={filters.marketplace}
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      marketplace: e.target.value as MarketplaceFilter,
+                    }))
+                  }
+                >
+                  <option value="all">All Marketplaces</option>
+                  <option value="ebay">eBay</option>
+                  <option value="etsy">Etsy</option>
+                  <option value="chrono24">Chrono24</option>
+                  <option value="other">Other</option>
+                </Select>
+
+                <Select
+                  sm
+                  filter
+                  value={filters.sort}
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      sort: e.target.value as SortFilter,
+                    }))
+                  }
+                >
+                  <option value="none">Sort: Default</option>
+                  <option value="price_low">Price: Low → High</option>
+                  <option value="price_high">Price: High → Low</option>
+                </Select>
+
+                <Input
+                  sm
+                  filter
+                  className="input--max-price"
+                  type="number"
+                  min={0}
+                  placeholder="Max total ($)"
+                  value={filters.maxPrice}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, maxPrice: e.target.value }))
+                  }
+                />
+
+                <Button
+                  variant="ghost"
+                  sm
+                  className="btn--clear"
+                  onClick={handleClearFilters}
+                >
+                  Clear filters
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="app-content results-meta">
+            {filteredListings.length} watches found
+            {activeSavedSearch && (
+              <span> · Lens: {activeSavedSearch.name}</span>
+            )}
+          </div>
         </>
       )}
+
+      <main
+        className={`app-content main-content${view === "lists" ? " main-content--lists" : ""}`}
+      >
+        {view === "discover" ? (
+          <>
+            {filteredListings.length === 0 ? (
+              <EmptyState
+                icon="search"
+                title="No watches found"
+                description={
+                  <>
+                    Try searching for &ldquo;Seiko&rdquo;, &ldquo;vintage&rdquo;, or
+                    &ldquo;Casio&rdquo;, or adjust your filters to see more results.
+                  </>
+                }
+                actions={[
+                  ...(!isDefaultDiscoveryState
+                    ? [
+                        {
+                          label: "Reset search & filters",
+                          onClick: handleResetDiscovery,
+                        },
+                      ]
+                    : []),
+                  ...(hasActiveFilters
+                    ? [
+                        {
+                          label: "Clear filters",
+                          onClick: handleClearFilters,
+                          variant: "ghost" as const,
+                        },
+                      ]
+                    : []),
+                ]}
+              />
+            ) : (
+              <ListingsGrid
+                watches={filteredListings}
+                isSaved={isSaved}
+                onSave={(watch) => setPendingWatch(watch)}
+                lists={lists}
+              />
+            )}
+          </>
+        ) : (
+          <>
+            {listsWithWatches.length === 0 ? (
+              <EmptyState
+                icon="bookmark"
+                title="No saved watches yet"
+                description="Browse Discover and save watches you want to track. You can organize them into lists like Favorites or custom collections."
+                actions={[
+                  {
+                    label: "Go to Discover",
+                    onClick: () => setView("discover"),
+                  },
+                ]}
+              />
+            ) : (
+              <div className="lists-view">
+                {listsWithWatches.map(([listName, listWatches]) => (
+                  <ListSection
+                    key={listName}
+                    listName={listName}
+                    watches={listWatches}
+                    enrichWatch={enrichWatch}
+                    isSaved={isSaved}
+                    onSave={(watch) => setPendingWatch(watch)}
+                    onRemove={(watch) => removeFromList(listName, watch)}
+                    onClearList={() => clearList(listName)}
+                    lists={lists}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </main>
 
     {showSaveSearchModal && (
       <SaveSearchModal
@@ -549,200 +519,30 @@ function App() {
     )}
 
     {pendingWatch && (
-      <div style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: "rgba(0,0,0,0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center"
-      }}>
-        <div style={{
-            background: "white",
-            padding: 16,
-            borderRadius: 12,
-            width: "100%",
-            maxWidth: 420,
-            maxHeight: "80vh",
-            overflowY: "auto",
-            overflowX: "hidden",
-            boxSizing: "border-box"
-          }}>
-          
-          <div style={{ marginBottom: 12 }}>
-              <h3 style={{ margin: 0 }}>Save to list</h3>
-
-              <p style={{ fontSize: 12, color: "#666", marginTop: 6 }}>
-                Select a list or create a new one. You can save the same watch to multiple lists.
-              </p>
-          </div>
-
-          <h4 style={{ fontSize: 13, marginTop: 16, marginBottom: 8 }}>
-            Existing Lists
-          </h4>
-
-          {/* EXISTING LISTS */}
-          {Object.keys(lists).map((listName) => {
-            const alreadySaved = lists[listName]?.some(
-              (w) => w.id === pendingWatch?.id
-            );
-
-            const isEmpty = lists[listName]?.length === 0;
-
-            return (
-              <div
-                key={listName}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  marginBottom: 10
-                }}
-              >
-      
-                <button
-                  style={{
-                    width: "100%",
-                    padding: "10px",
-                    borderRadius: 8,
-                    border: "1px solid #eee",
-                    background: alreadySaved ? "#111" : "#fafafa",
-                    color: alreadySaved ? "#fff" : "#111",
-                    textAlign: "left",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    fontWeight: 500
-                  }}
-                  onClick={() => {
-                    if (!pendingWatch) return;
-
-                    if (alreadySaved) {
-                      removeFromList(listName, pendingWatch);
-                    } else {
-                      toggleWatchInList(listName, pendingWatch);
-                    }
-                  }}
-                >
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>{listName}</span>
-
-                  {alreadySaved && (
-                    <span style={{ fontSize: 11, color: "#22c55e" }}>
-                      Saved ✓
-                    </span>
-                  )}
-                </div>
-                </button>
-
-                
-                {/* ✅ DELETE BUTTON GOES HERE */}
-                {isEmpty && listName !== "Favorites" && (
-                  <button
-                    onClick={() => deleteList(listName)}
-                    style={{
-                      marginTop: 6,
-                      padding: "6px 10px",
-                      borderRadius: 6,
-                      border: "1px solid #f0f0f0",
-                      background: "#fff",
-                      color: "#999",
-                      fontSize: 12,
-                      cursor: "pointer"
-                    }}
-                  >
-                    Delete empty list
-                  </button>
-                )}
-
-              </div>
-
-            );
-          })}
-
-          <h4 style={{ fontSize: 13, marginTop: 16, marginBottom: 8 }}>
-            Create New List
-          </h4>
-          {/* CREATE NEW LIST */}
-          <CreateListInput
-            onCreate={(name) => {
-              createList(name);
-
-              // optional UX improvement:
-              if (pendingWatch) {
-                toggleWatchInList(name, pendingWatch);
-              }
-            }}
-          />
-
-          {/* CANCEL */}
-          <button
-            style={{ marginTop: 10 }}
-            onClick={() => setPendingWatch(null)}
-          >
-            Close
-          </button>
-
-        </div>
-      </div>
+      <SaveToListModal
+        watch={pendingWatch}
+        lists={lists}
+        onClose={() => setPendingWatch(null)}
+        onToggleList={(listName) => {
+          const alreadySaved = lists[listName]?.some(
+            (w) => w.id === pendingWatch.id
+          );
+          if (alreadySaved) {
+            removeFromList(listName, pendingWatch);
+          } else {
+            toggleWatchInList(listName, pendingWatch);
+          }
+        }}
+        onDeleteList={deleteList}
+        onCreateList={(name) => {
+          createList(name);
+          toggleWatchInList(name, pendingWatch);
+        }}
+      />
     )}
 
     </div>
   );
-
-
-  function CreateListInput({
-    onCreate
-  }: {
-    onCreate: (name: string) => void;
-  }) {
-    const [value, setValue] = useState("");
-  
-    return (
-      <div style={{
-        marginTop: 14,
-        padding: 10,
-        border: "1px dashed #ddd",
-        borderRadius: 10
-      }}>
-        <input
-          placeholder="New list name"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          style={{
-            width: "100%",
-            boxSizing: "border-box",
-            padding: "8px 10px",
-            borderRadius: 8,
-            border: "1px solid #ddd",
-            fontSize: 13
-          }}
-        />
-  
-        <button
-          onClick={() => {
-            if (!value.trim()) return;
-            onCreate(value.trim());
-            setValue("");
-          }}
-          style={{
-            width: "100%",
-            marginTop: 8,
-            padding: "8px",
-            borderRadius: 8,
-            border: "none",
-            background: "#111",
-            color: "#fff",
-            fontSize: 13,
-            cursor: "pointer"
-          }}
-        >
-          + Create List
-        </button>
-      </div>
-    );
-  }
 }
 
 export default App;
