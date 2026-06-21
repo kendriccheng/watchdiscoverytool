@@ -51,10 +51,7 @@ export default function WatchCard({
                 {hasShippingEstimate ? "Shipping (est.)" : "Shipping"}
               </span>
               {hasShippingEstimate ? (
-                <span className="watch-card__price-value">
-                  ${watch.shipping}{" "}
-                  <span className="watch-card__est-suffix">est.</span>
-                </span>
+                <span className="watch-card__price-value">${watch.shipping}</span>
               ) : (
                 <span className="watch-card__price-value watch-card__shipping-hint">
                   Add postal code

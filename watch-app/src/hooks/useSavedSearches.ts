@@ -20,10 +20,15 @@ export function useSavedSearches() {
   const [userSavedSearches, setUserSavedSearches] = useState<SavedSearch[]>(
     () => loadUserSavedSearches()
   );
+  const [dismissedPresetIds, setDismissedPresetIds] = useState<string[]>([]);
 
   const allSavedSearches = useMemo(
-    () => mergeSavedSearches(userSavedSearches),
-    [userSavedSearches]
+    () =>
+      mergeSavedSearches(userSavedSearches).filter(
+        (search) =>
+          !search.isPreset || !dismissedPresetIds.includes(search.id)
+      ),
+    [userSavedSearches, dismissedPresetIds]
   );
 
   const saveSearch = useCallback((input: SaveSearchInput) => {
@@ -39,7 +44,12 @@ export function useSavedSearches() {
   }, []);
 
   const deleteSearch = useCallback((id: string) => {
-    if (isPresetSavedSearchId(id)) return false;
+    if (isPresetSavedSearchId(id)) {
+      setDismissedPresetIds((prev) =>
+        prev.includes(id) ? prev : [...prev, id]
+      );
+      return true;
+    }
 
     setUserSavedSearches((prev) => {
       const next = prev.filter((search) => search.id !== id);

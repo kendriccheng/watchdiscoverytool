@@ -1,4 +1,5 @@
 import type { SavedSearch } from "../../types/savedSearch";
+import { cn } from "../../utils/cn";
 import { Button, SectionLabel } from "../ui";
 
 type Props = {
@@ -31,34 +32,32 @@ export default function SavedSearchBar({
       <div className="saved-search-bar__pills">
         {savedSearches.map((search) => {
           const isActive = search.id === activeSavedSearchId;
-          const canDelete = !search.isPreset && onDelete;
 
           return (
-            <div key={search.id} className="saved-search-bar__pill-group">
-              <Button
+            <div
+              key={search.id}
+              className={cn("lens-pill", isActive && "lens-pill--active")}
+            >
+              <button
                 type="button"
-                pill
-                sm
-                active={isActive}
-                className="saved-search-bar__lens-btn"
+                className="lens-pill__apply"
                 onClick={() => onApply(search)}
               >
-                <span className="saved-search-bar__lens-name">{search.name}</span>
-                {search.isPreset && (
-                  <span className="lens-badge">Preset</span>
-                )}
-              </Button>
+                {search.name}
+              </button>
 
-              {canDelete && (
-                <Button
+              {onDelete && (
+                <button
                   type="button"
-                  variant="ghost"
-                  className="btn--delete-lens"
-                  aria-label={`Delete ${search.name}`}
-                  onClick={() => onDelete(search.id)}
+                  className="lens-pill__dismiss"
+                  aria-label={`Remove ${search.name}`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onDelete(search.id);
+                  }}
                 >
                   ×
-                </Button>
+                </button>
               )}
             </div>
           );

@@ -9,6 +9,7 @@ import {
   EmptyState,
   FieldLabel,
   Input,
+  SearchInput,
   Select,
   Tab,
   TabBar,
@@ -299,10 +300,10 @@ function App() {
         <div className="app-content app-header__inner">
           <div className="app-header__top">
             <div>
-              <h1>Watch Discovery Tool</h1>
+              <h1>WatchScout</h1>
               <p className="app-header__subtitle">
-                Discover vintage Timex and interesting watches across eBay, Etsy,
-                and more — with shipping estimates to your door.
+                Stop checking marketplaces one by one. Scout watches by total
+                cost and save the ones worth your attention.
               </p>
             </div>
             <TabBar>
@@ -340,10 +341,9 @@ function App() {
                 >
                   Shipping destination
                 </FieldLabel>
-                <Input
+                <SearchInput
                   id="watch-search"
                   className="search-row__input search-row__input--search"
-                  type="text"
                   placeholder="Seiko, vintage, Casio..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}

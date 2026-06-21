@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import type { WatchListing } from "../../data/mockListings";
 import type { SortFilter } from "../../types/savedSearch";
 import { filterAndSortListWatches } from "../../utils/filterAndSortWatches";
-import { Button, Input, Select } from "../ui";
+import { Button, SearchInput, Select } from "../ui";
 import ListingsGrid from "./ListingsGrid";
 
 type Props = {
@@ -67,11 +67,10 @@ export default function ListSection({
       </div>
 
       <div className="list-section__toolbar">
-        <Input
+        <SearchInput
           id={searchFieldId}
           sm
           className="list-section__search"
-          type="search"
           placeholder="Search this list..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}

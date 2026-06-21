@@ -85,7 +85,7 @@ export type WatchListing = {
     }
   ];
   
-  const generatedItems: WatchListing[] = Array.from({ length: 100 }).map((_, i) => {
+  const generatedItems: WatchListing[] = Array.from({ length: 260 }).map((_, i) => {
     const brands = [
       "Seiko",
       "Casio",
