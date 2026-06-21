@@ -12,6 +12,13 @@ function App() {
     "Favorites": []
   });
 
+  const [filters, setFilters] = useState({
+    condition: "all",
+    marketplace: "all",
+    sort: "none"
+  });
+
+
   const isSaved = (watchId: string) =>
     Object.values(lists)
       .flat()
@@ -26,12 +33,32 @@ function App() {
 
   const filteredListings = mockListings.filter((watch) => {
     const q = searchQuery.toLowerCase();
-  
-    return (
+
+    const matchesSearch =
       watch.title.toLowerCase().includes(q) ||
       watch.marketplace.toLowerCase().includes(q) ||
-      watch.description.toLowerCase().includes(q)
-    );
+      watch.description.toLowerCase().includes(q);
+
+    const matchesCondition =
+      filters.condition === "all" || watch.condition === filters.condition;
+
+    const matchesMarketplace =
+      filters.marketplace === "all" || watch.marketplace === filters.marketplace;
+
+    return matchesSearch && matchesCondition && matchesMarketplace;
+  })
+  .sort((a, b) => {
+    switch (filters.sort) {
+      case "price_low":
+        return a.totalCost - b.totalCost;
+
+      case "price_high":
+        return b.totalCost - a.totalCost;
+
+      case "none":
+      default:
+        return 0;
+    }
   });
 
   const deleteList = (listName: string) => {
@@ -81,6 +108,41 @@ function App() {
   };
 
 
+  const applyFilters = (watches: WatchListing[]) => {
+    return watches
+      .filter((watch) => {
+        const q = searchQuery.toLowerCase();
+  
+        const matchesSearch =
+          watch.title.toLowerCase().includes(q) ||
+          watch.marketplace.toLowerCase().includes(q) ||
+          watch.description.toLowerCase().includes(q);
+  
+        const matchesCondition =
+          filters.condition === "all" ||
+          watch.condition === filters.condition;
+  
+        const matchesMarketplace =
+          filters.marketplace === "all" ||
+          watch.marketplace === filters.marketplace;
+  
+        return matchesSearch && matchesCondition && matchesMarketplace;
+      })
+      .sort((a, b) => {
+        switch (filters.sort) {
+          case "price_low":
+            return a.totalCost - b.totalCost;
+  
+          case "price_high":
+            return b.totalCost - a.totalCost;
+  
+          default:
+            return 0;
+        }
+      });
+  };
+
+
 
   return (
     <div>
@@ -90,7 +152,7 @@ function App() {
       <div style={{ padding: "0 16px" }}>
         <input
           type="text"
-          placeholder="Search watches (Seiko, vintage, Casio...)"
+          placeholder="Search watches (Timex, vintage, Casio...)"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{
@@ -104,7 +166,55 @@ function App() {
           }}
         />
       </div>
-  
+          
+      <div style={{
+        display: "flex",
+        gap: 8,
+        padding: "0 16px",
+        marginBottom: 12,
+        flexWrap: "wrap"
+      }}>
+        
+        <select
+          value={filters.condition}
+          onChange={(e) =>
+            setFilters(prev => ({ ...prev, condition: e.target.value }))
+          }
+        >
+          <option value="all">All Conditions</option>
+          <option value="working">Working</option>
+          <option value="untested">Untested</option>
+          <option value="broken">Broken</option>
+        </select>
+
+
+        <select
+          value={filters.marketplace}
+          onChange={(e) =>
+            setFilters(prev => ({ ...prev, marketplace: e.target.value }))
+          }
+        >
+          <option value="all">All Marketplaces</option>
+          <option value="ebay">eBay</option>
+          <option value="etsy">Etsy</option>
+          <option value="chrono24">Chrono24</option>
+          <option value="other">Other</option>
+        </select>
+
+        <select
+          value={filters.sort}
+          onChange={(e) =>
+            setFilters(prev => ({ ...prev, sort: e.target.value }))
+          }
+        >
+          <option value="none">Sort: Default</option>
+          <option value="price_low">Price: Low → High</option>
+          <option value="price_high">Price: High → Low</option>
+        </select>
+
+      </div>
+
+
       {/* NAV */}
       <div style={{ display: "flex", gap: 12, padding: 16 }}>
         <button onClick={() => setView("discover")}>
@@ -126,7 +236,7 @@ function App() {
             </div>
           ) : (
             <ListingsGrid
-              watches={filteredListings}
+              watches={applyFilters(mockListings)}
               isSaved={isSaved}
               onSave={(watch) => setPendingWatch(watch)}
               lists={lists}
@@ -155,7 +265,7 @@ function App() {
                 <h3 style={{ paddingLeft: 16 }}>{listName}</h3>
   
                 <ListingsGrid
-                  watches={lists[listName]}
+                  watches={applyFilters(lists[listName])}
                   isSaved={isSaved}
                   onSave={(watch) => setPendingWatch(watch)}
                   onRemove={(watch) => removeFromList(listName, watch)}
@@ -248,7 +358,7 @@ function App() {
                   <span>{listName}</span>
 
                   {alreadySaved && (
-                    <span style={{ fontSize: 11, opacity: 0.7 }}>
+                    <span style={{ fontSize: 11, color: "#22c55e" }}>
                       Saved ✓
                     </span>
                   )}
