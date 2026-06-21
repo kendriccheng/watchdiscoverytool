@@ -9,29 +9,19 @@ function App() {
   const [pendingWatch, setPendingWatch] = useState<WatchListing | null>(null);
 
   const [lists, setLists] = useState<Record<string, WatchListing[]>>({
-    "My List": []
+    "Favorites": []
   });
 
-  const saveToList = (listName: string, watch: WatchListing) => {
-    setLists((prev) => {
-      const existing = prev[listName] || [];
-  
-      const exists = existing.find((w) => w.id === watch.id);
-  
-      return {
-        ...prev,
-        [listName]: exists
-          ? existing.filter((w) => w.id !== watch.id)
-          : [...existing, watch]
-      };
-    });
-  
-    setPendingWatch(null);
-  };
+  const isSaved = (watchId: string) =>
+    Object.values(lists)
+      .flat()
+      .some((w) => w.id === watchId);
 
-  const isSaved = (id: string) =>
-    lists["My List"]?.some((w) => w.id === id) ?? false;
-
+  const getWatchLists = (watchId: string) =>
+    Object.keys(lists).filter((listName) =>
+      lists[listName].some((w) => w.id === watchId)
+    );
+ 
   const [view, setView] = useState<"discover" | "lists">("discover");
 
   const filteredListings = mockListings.filter((watch) => {
@@ -43,6 +33,44 @@ function App() {
       watch.description.toLowerCase().includes(q)
     );
   });
+
+  const toggleWatchInList = (listName: string, watch: WatchListing) => {
+    setLists((prev) => {
+      const list = prev[listName] || [];
+      const exists = list.some((w) => w.id === watch.id);
+  
+      return {
+        ...prev,
+        [listName]: exists
+          ? list.filter((w) => w.id !== watch.id)
+          : [...list, watch]
+      };
+    });
+  };
+
+  const createList = (name: string) => {
+    setLists((prev) => {
+      if (prev[name]) return prev;
+  
+      return {
+        ...prev,
+        [name]: []
+      };
+    });
+  };
+
+  const removeFromList = (listName: string, watch: WatchListing) => {
+    setLists((prev) => {
+      const list = prev[listName] || [];
+  
+      return {
+        ...prev,
+        [listName]: list.filter((w) => w.id !== watch.id)
+      };
+    });
+  };
+
+
 
   return (
     <div>
@@ -86,10 +114,11 @@ function App() {
             </div>
           ) : (
             <ListingsGrid
-            watches={filteredListings}
-            isSaved={isSaved}
-            onSave={(watch) => setPendingWatch(watch)}
-          />
+              watches={filteredListings}
+              isSaved={isSaved}
+              onSave={(watch) => setPendingWatch(watch)}
+              lists={lists}
+            />
           )}
         </>
       ) : (
@@ -105,9 +134,11 @@ function App() {
                 <h3 style={{ paddingLeft: 16 }}>{listName}</h3>
   
                 <ListingsGrid
-                  watches={lists["My List"]}
+                  watches={lists[listName]}
                   isSaved={isSaved}
                   onSave={(watch) => setPendingWatch(watch)}
+                  onRemove={(watch) => removeFromList(listName, watch)}
+                  lists={lists}
                 />
               </div>
             ))
@@ -129,9 +160,12 @@ function App() {
       }}>
         <div style={{
           background: "white",
-          padding: 20,
-          borderRadius: 10,
-          width: 320
+          padding: 16,
+          borderRadius: 12,
+          width: 420,
+          maxHeight: "80vh",
+          overflowY: "auto",
+          boxSizing: "border-box"
         }}>
           
           <h3>Save Watch</h3>
@@ -139,24 +173,66 @@ function App() {
             Choose a list or create a new one
           </p>
 
-          {/* EXISTING LISTS */}
-          {Object.keys(lists).map((listName) => (
-            <button
-              key={listName}
-              style={{
-                display: "block",
-                width: "100%",
-                marginBottom: 8
-              }}
-              onClick={() => saveToList(listName, pendingWatch)}
-            >
-              {listName}
-            </button>
-          ))}
+          <h4 style={{ fontSize: 13, marginTop: 16, marginBottom: 8 }}>
+            Existing Lists
+          </h4>
 
+          {/* EXISTING LISTS */}
+          {Object.keys(lists).map((listName) => {
+            const alreadySaved = lists[listName]?.some(
+              (w) => w.id === pendingWatch?.id
+            );
+
+            return (
+              <div
+                key={listName}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  marginBottom: 10
+                }}
+              >
+                
+                <button
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: 8,
+                    border: "1px solid #eee",
+                    background: alreadySaved ? "#111" : "#fff",
+                    color: alreadySaved ? "#fff" : "#111",
+                    textAlign: "left",
+                    cursor: "pointer"
+                  }}
+                  onClick={() => {
+                    if (!pendingWatch) return;
+
+                    if (alreadySaved) {
+                      removeFromList(listName, pendingWatch);
+                    } else {
+                      toggleWatchInList(listName, pendingWatch);
+                    }
+                  }}
+                >
+                  {listName}
+                </button>
+              </div>
+            );
+          })}
+
+          <h4 style={{ fontSize: 13, marginTop: 16, marginBottom: 8 }}>
+            Create New List
+          </h4>
           {/* CREATE NEW LIST */}
           <CreateListInput
-            onCreate={(name) => saveToList(name, pendingWatch)}
+            onCreate={(name) => {
+              createList(name);
+
+              // optional UX improvement:
+              if (pendingWatch) {
+                toggleWatchInList(name, pendingWatch);
+              }
+            }}
           />
 
           {/* CANCEL */}

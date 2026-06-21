@@ -5,6 +5,7 @@ type Props = {
   isSaved: boolean;
   onSave: () => void;
   lists: Record<string, WatchListing[]>;
+  onRemove?: () => void;
 };
 
 
@@ -13,6 +14,7 @@ export default function WatchCard({
   watch,
   isSaved,
   onSave,
+  onRemove,
   lists
 }: Props) {
   const savedInLists = Object.keys(lists ?? {}).filter((listName) =>
@@ -57,6 +59,23 @@ export default function WatchCard({
                 {isSaved ? "Saved ✓ (add to list)" : "Save"}
             </button>
           </div>
+        
+          {onRemove && (
+            <button
+              onClick={onRemove}
+              style={{
+                marginTop: 6,
+                padding: "6px 10px",
+                fontSize: 12,
+                borderRadius: 6,
+                border: "1px solid #ddd",
+                background: "#fff",
+                cursor: "pointer"
+              }}
+            >
+              Remove
+            </button>
+          )}
       </div>
     </div>
   );
