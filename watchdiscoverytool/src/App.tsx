@@ -15,9 +15,9 @@ function App() {
   const [filters, setFilters] = useState({
     condition: "all",
     marketplace: "all",
-    sort: "none"
+    sort: "none",
+    maxPrice: ""
   });
-
 
   const isSaved = (watchId: string) =>
     Object.values(lists)
@@ -30,8 +30,46 @@ function App() {
     );
  
   const [view, setView] = useState<"discover" | "lists">("discover");
+  
+  const [shippingLocation, setShippingLocation] = useState("");
 
-  const filteredListings = mockListings.filter((watch) => {
+  const hasPostalCode = shippingLocation?.trim().length > 0;
+
+  const getPostalPrefix = (postal: string) =>
+    postal?.replace(/\s/g, "").substring(0, 3).toUpperCase();
+
+  const getShippingCost = (base: number, postalCode: string) => {
+    const prefix = getPostalPrefix(postalCode);
+
+    let multiplier = 1;
+
+    if (!prefix) return Math.round(base);
+
+    if (["M6K", "M5V", "M4B"].includes(prefix)) {
+      multiplier = 1.1;
+    } else if (["H2X", "V6B"].includes(prefix)) {
+      multiplier = 1.3;
+    }
+
+    return Math.round(base * multiplier);
+  };
+
+  const enrichWatch = (watch: WatchListing) => {
+    const shippingCost = hasPostalCode
+      ? getShippingCost(watch.shipping, shippingLocation)
+      : null;
+
+    return {
+      ...watch,
+      shipping: shippingCost,
+      totalCost: watch.price + (shippingCost ?? 0)
+    };
+  };
+
+  const enrichedListings = mockListings.map(enrichWatch);
+
+  // Filter and sort on shipping-enriched listings
+  const filteredListings = enrichedListings.filter((watch) => {
     const q = searchQuery.toLowerCase();
 
     const matchesSearch =
@@ -45,7 +83,15 @@ function App() {
     const matchesMarketplace =
       filters.marketplace === "all" || watch.marketplace === filters.marketplace;
 
-    return matchesSearch && matchesCondition && matchesMarketplace;
+    const maxPrice =
+      filters.maxPrice === "" ? null : Number(filters.maxPrice);
+
+    const matchesMaxPrice =
+      maxPrice === null ||
+      Number.isNaN(maxPrice) ||
+      watch.totalCost <= maxPrice;
+
+    return matchesSearch && matchesCondition && matchesMarketplace && matchesMaxPrice;
   })
   .sort((a, b) => {
     switch (filters.sort) {
@@ -108,40 +154,6 @@ function App() {
   };
 
 
-  const applyFilters = (watches: WatchListing[]) => {
-    return watches
-      .filter((watch) => {
-        const q = searchQuery.toLowerCase();
-  
-        const matchesSearch =
-          watch.title.toLowerCase().includes(q) ||
-          watch.marketplace.toLowerCase().includes(q) ||
-          watch.description.toLowerCase().includes(q);
-  
-        const matchesCondition =
-          filters.condition === "all" ||
-          watch.condition === filters.condition;
-  
-        const matchesMarketplace =
-          filters.marketplace === "all" ||
-          watch.marketplace === filters.marketplace;
-  
-        return matchesSearch && matchesCondition && matchesMarketplace;
-      })
-      .sort((a, b) => {
-        switch (filters.sort) {
-          case "price_low":
-            return a.totalCost - b.totalCost;
-  
-          case "price_high":
-            return b.totalCost - a.totalCost;
-  
-          default:
-            return 0;
-        }
-      });
-  };
-
   const pillStyle = (active: boolean) => ({
     padding: "6px 10px",
     borderRadius: 999,
@@ -151,7 +163,6 @@ function App() {
     background: active ? "#111" : "#fff",
     color: active ? "#fff" : "#111"
   });
-
 
   return (
     <div style={{
@@ -175,24 +186,58 @@ function App() {
           Watch Discovery Tool
         </h1>
       </div>
-  
+
+
+      {/* SHIPPING INPUT */}
+      <div style={{ padding: "0 16px", marginBottom: 6 }}>
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: "bold",
+            color: "#666",
+            marginBottom: 4,
+            textAlign: "left"
+          }}
+        >
+          Enter a Shipping destination (for estimated delivery cost)
+        </div>
+
+        <input
+          value={shippingLocation}
+          onChange={(e) => setShippingLocation(e.target.value)}
+          placeholder="Enter a postal code, e.g. A1A 2B3"
+          style={{
+            width: 180,             
+            padding: "6px 10px",
+            borderRadius: 8,
+            border: "1px solid #ddd",
+            fontSize: 12,
+            display: "block"         
+          }}
+        />
+      </div>
+
       {/* SEARCH */}
-      <div style={{
-        margin: "12px 16px",
-        padding: 12,
-        borderRadius: 12
-      }}>
+      <div style={{ padding: "0 16px", marginBottom: 8 }}>
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: "bold",
+            color: "#666",
+            marginBottom: 4,
+            textAlign: "left"
+          }}
+        >
+          Search for your watch
+        </div>
         <input
           type="text"
-          placeholder="Search watches (Timex, vintage, Casio...)"
+          placeholder="Search watches (Seiko, vintage, Casio...)"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{
             width: "100%",
-            maxWidth: "100%",
-            boxSizing: "border-box",
-            padding: "8px 10px",
-            marginBottom: 8,
+            padding: "6px 10px",
             borderRadius: 8,
             border: "1px solid #ddd"
           }}
@@ -200,7 +245,7 @@ function App() {
       </div>
 
       <div style={{ padding: "0 16px", marginBottom: 8, fontSize: 12, color: "#666" }}>
-        {applyFilters(mockListings).length} watches found
+        {filteredListings.length} watches found
       </div>
 
 
@@ -256,6 +301,23 @@ function App() {
           <option value="price_high">Price: High → Low</option>
         </select>
 
+        <input
+          type="number"
+          min={0}
+          placeholder="Max total ($)"
+          value={filters.maxPrice}
+          onChange={(e) =>
+            setFilters((prev) => ({ ...prev, maxPrice: e.target.value }))
+          }
+          style={{
+            width: 100,
+            padding: "6px 10px",
+            borderRadius: 8,
+            border: "1px solid #ddd",
+            fontSize: 12
+          }}
+        />
+
 
         {/*Clear Filter*/}
         <button
@@ -263,7 +325,8 @@ function App() {
             setFilters({
               condition: "all",
               marketplace: "all",
-              sort: "none"
+              sort: "none",
+              maxPrice: ""
             })
           }
           style={{
@@ -302,7 +365,7 @@ function App() {
             </div>
           ) : (
             <ListingsGrid
-              watches={applyFilters(mockListings)}
+              watches={filteredListings}
               isSaved={isSaved}
               onSave={(watch) => setPendingWatch(watch)}
               lists={lists}
@@ -325,13 +388,13 @@ function App() {
                 border: "1px solid #eee",
                 borderRadius: 10,
                 padding: 10,
-                background: "#fff"
+                background: "#ECE4D7"
               }}
               >
-                <h3 style={{ paddingLeft: 16 }}>{listName}</h3>
+                <h3 style={{ paddingLeft: 16, color: "black", margin: 0 }}>{listName}</h3>
   
                 <ListingsGrid
-                  watches={applyFilters(lists[listName])}
+                  watches={lists[listName].map(enrichWatch)}
                   isSaved={isSaved}
                   onSave={(watch) => setPendingWatch(watch)}
                   onRemove={(watch) => removeFromList(listName, watch)}

@@ -23,59 +23,81 @@ export default function WatchCard({
 
   return (
     <div style={styles.card}>
-      <img src={watch.imageUrl} alt={watch.title} style={styles.image} className="h-24 w-full object-contain"/>
+      <div style={styles.mainRow}>
+        <img src={watch.imageUrl} alt={watch.title} style={styles.image} className="h-24 w-full object-contain"/>
 
-      <div style={styles.content}>
+        <div style={styles.content}>
 
-        {/* HEADER */}
-        <div>
-          <h3 style={styles.title}>{watch.title}</h3>
+          {/* HEADER */}
+          <div>
+            <h3 style={styles.title}>{watch.title}</h3>
 
-          <p style={styles.meta}>
-            {watch.marketplace.toUpperCase()} • {watch.condition}
-          </p>
-        </div>
-
-        {/* PRICE (HIERARCHY EMPHASIS) */}
-        <div style={styles.priceRow}>
-          <p style={styles.price}>${watch.totalCost}</p>
-        </div>
-
-        {/* DESCRIPTION */}
-        <p style={styles.desc}>{watch.description}</p>
-
-        {/* SAVED INFO */}
-        {savedInLists.length > 0 && (
-          <div style={styles.savedInfo}>
-            Saved in: {savedInLists.join(", ")}
+            <p style={styles.meta}>
+              {watch.marketplace.toUpperCase()} • {watch.condition}
+            </p>
           </div>
-        )}
 
-        {/* ACTIONS */}
-        <div style={styles.actions}>
-          <button
-            onClick={onSave}
-            style={{
-              ...styles.button,
-              background: isSaved ? "#111" : "#fff",
-              color: isSaved ? "#fff" : "#111",
-              border: "1px solid #ddd"
-            }}
-          >
-            {isSaved ? "Saved ✓" : "Save"}
-          </button>
+          {/* PRICE (HIERARCHY EMPHASIS) */}
+          <div style={styles.priceRow}>
+            <div style={styles.priceBlock}>
+    
+              <div style={styles.priceRowSmall}>
+                <span style={styles.label}>Item</span>
+                <span>${watch.price}</span>
+              </div>
 
-          {/*{isSaved && (
-            <button
-              onClick={onRemove}
-              style={styles.removeButton}
-            >
-              Remove
-            </button>
-          )*/}
+              {watch.shipping !== null && watch.shipping !== undefined && (
+                <div style={styles.priceRowSmall}>
+                  <span style={styles.label}>Shipping</span>
+                  <span>${watch.shipping}</span>
+                </div>
+              )}
+
+              <div style={styles.totalRow}>
+                <span>Total Cost</span>
+                <span>${watch.price + watch.shipping}</span>
+              </div>
+
+            </div>
+          </div>
+
+          {/* DESCRIPTION */}
+          <p style={styles.desc}>{watch.description}</p>
+
+          {/* SAVED INFO */}
+          {savedInLists.length > 0 && (
+            <div style={styles.savedInfo}>
+              Saved in: {savedInLists.join(", ")}
+            </div>
+          )}
+
         </div>
-
       </div>
+
+      {/* ACTIONS */}
+      <div style={styles.actions}>
+        <button
+          onClick={onSave}
+          style={{
+            ...styles.button,
+            background: isSaved ? "#111" : "#fff",
+            color: isSaved ? "#fff" : "#111",
+            border: "1px solid #ddd"
+          }}
+        >
+          {isSaved ? "Saved ✓" : "Save"}
+        </button>
+
+        {/*{isSaved && (
+          <button
+            onClick={onRemove}
+            style={styles.removeButton}
+          >
+            Remove
+          </button>
+        )*/}
+      </div>
+
     </div>
   );
 }
@@ -87,10 +109,16 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 10,
     padding: 12,
     display: "flex",
+    flexDirection: "column",
     gap: 12,
     background: "white",
-    minHeight: 180,
-    alignItems: "stretch"
+    minHeight: 180
+  },
+  mainRow: {
+    display: "flex",
+    gap: 12,
+    alignItems: "stretch",
+    flex: 1
   },
   image: {
     width: 80,
@@ -107,7 +135,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   title: {
     fontSize: 14,
-    margin: 0
+    margin: 0,
+    color: "black"
   },
   meta: {
     fontSize: 12,
@@ -140,8 +169,38 @@ const styles: Record<string, React.CSSProperties> = {
 
   priceRow: {
     display: "flex",
-    alignItems: "baseline",
-    justifyContent: "flex-start"
+    justifyContent: "space-between",
+    width: "100%"
+  },
+
+  priceRowSmall: {
+    display: "flex",
+    justifyContent: "space-between",
+    fontSize: 11,
+    color: "#666",
+    lineHeight: 1.2
+  },
+  
+  priceBlock: {
+    marginTop: 4,
+    display: "flex",
+    flexDirection: "column",
+    gap: 2
+  },
+
+  label: {
+    color: "#888"
+  },
+
+  totalRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    fontSize: 13,
+    color: "black",
+    fontWeight: 700,
+    marginTop: 2,
+    paddingTop: 4,
+    borderTop: "1px solid #eee"
   },
   
   savedInfo: {
@@ -155,7 +214,6 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "center",
     alignItems: "center",
     gap: 8,
-    marginTop: "auto",
     width: "100%"
   },
   
