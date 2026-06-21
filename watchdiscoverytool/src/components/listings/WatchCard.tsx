@@ -23,59 +23,58 @@ export default function WatchCard({
 
   return (
     <div style={styles.card}>
-      <img src={watch.imageUrl} alt={watch.title} style={styles.image} />
+      <img src={watch.imageUrl} alt={watch.title} style={styles.image} className="h-24 w-full object-contain"/>
 
       <div style={styles.content}>
-        <h3 style={styles.title}>{watch.title}</h3>
 
-        {savedInLists.length > 0 && (
-        <div style={{ fontSize: 11, color: "#666" }}>
-          Saved in: {savedInLists.join(", ")}
+        {/* HEADER */}
+        <div>
+          <h3 style={styles.title}>{watch.title}</h3>
+
+          <p style={styles.meta}>
+            {watch.marketplace.toUpperCase()} • {watch.condition}
+          </p>
         </div>
-         )}
 
-        <p style={styles.meta}>
-          {watch.marketplace.toUpperCase()} • {watch.condition}
-        </p>
+        {/* PRICE (HIERARCHY EMPHASIS) */}
+        <div style={styles.priceRow}>
+          <p style={styles.price}>${watch.totalCost}</p>
+        </div>
 
-        <p style={styles.price}>${watch.totalCost}</p>
-
+        {/* DESCRIPTION */}
         <p style={styles.desc}>{watch.description}</p>
 
-          <div style={{marginTop: "auto"}}>
-            <button
-                onClick={onSave}
-                style={{
-                  marginTop: 8,
-                  padding: "6px 10px",
-                  borderRadius: 6,
-                  border: "1px solid #ddd",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  background: isSaved ? "#111" : "#fff",
-                  color: isSaved ? "#fff" : "#111"
-                }}
-              >
-                {isSaved ? "Saved ✓ (add to list)" : "Save"}
-            </button>
+        {/* SAVED INFO */}
+        {savedInLists.length > 0 && (
+          <div style={styles.savedInfo}>
+            Saved in: {savedInLists.join(", ")}
           </div>
-        
-          {onRemove && (
+        )}
+
+        {/* ACTIONS */}
+        <div style={styles.actions}>
+          <button
+            onClick={onSave}
+            style={{
+              ...styles.button,
+              background: isSaved ? "#111" : "#fff",
+              color: isSaved ? "#fff" : "#111",
+              border: "1px solid #ddd"
+            }}
+          >
+            {isSaved ? "Saved ✓" : "Save"}
+          </button>
+
+          {/*{isSaved && (
             <button
               onClick={onRemove}
-              style={{
-                marginTop: 6,
-                padding: "6px 10px",
-                fontSize: 12,
-                borderRadius: 6,
-                border: "1px solid #ddd",
-                background: "#fff",
-                cursor: "pointer"
-              }}
+              style={styles.removeButton}
             >
               Remove
             </button>
-          )}
+          )*/}
+        </div>
+
       </div>
     </div>
   );
@@ -90,19 +89,21 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     gap: 12,
     background: "white",
-    minHeight: 180
+    minHeight: 180,
+    alignItems: "stretch"
   },
   image: {
     width: 80,
     height: 80,
-    objectFit: "cover",
+    objectFit: "contain",
     borderRadius: 8
   },
   content: {
     display: "flex",
     flexDirection: "column",
-    gap: 4,
-    flex: 1
+    flex: 1,
+    textAlign: "left",
+    width: "100%"
   },
   title: {
     fontSize: 14,
@@ -114,9 +115,10 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0
   },
   price: {
-    fontSize: 14,
-    fontWeight: 600,
-    margin: 0
+    fontSize: 16,
+    fontWeight: 700,
+    margin: 0,
+    lineHeight: 1.2
   },
   desc: {
     fontSize: 12,
@@ -128,11 +130,44 @@ const styles: Record<string, React.CSSProperties> = {
     WebkitBoxOrient: "vertical"
   },
   button: {
-    marginTop: 8,
-    padding: "6px 10px",
-    borderRadius: 6,
-    border: "none",
+    padding: "6px 12px",
+    borderRadius: 8,
     cursor: "pointer",
-    fontSize: 12
-  }
+    fontSize: 12,
+    minWidth: 90,
+    textAlign: "center"
+  },
+
+  priceRow: {
+    display: "flex",
+    alignItems: "baseline",
+    justifyContent: "flex-start"
+  },
+  
+  savedInfo: {
+    fontSize: 11,
+    color: "#666",
+    marginTop: 6
+  },
+  
+  actions: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+    marginTop: "auto",
+    width: "100%"
+  },
+  
+removeButton: {
+  padding: "6px 12px",
+  borderRadius: 8,
+  fontSize: 12,
+  cursor: "pointer",
+  border: "1px solid #eee",
+  background: "#fff",
+  color: "#666",
+  minWidth: 90,
+  textAlign: "center"
+}
 };

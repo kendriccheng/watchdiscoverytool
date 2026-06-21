@@ -10,8 +10,19 @@ export type WatchListing = {
     listingUrl: string;
     description: string;
   };
+
+
+  const brandLogos: Record<string, string> = {
+    Seiko: "/logos/seiko.png",
+    Casio: "/logos/casio.png",
+    Timex: "/logos/timex.png",
+    Citizen: "/logos/citizen.png",
+    Orient: "/logos/orient.png",
+    Fossil: "/logos/fossil.png",
+    Swatch: "/logos/swatch.png",
+  };
   
-  const baseItems = [
+  const baseItems: WatchListing[] = [
     {
       id: "1",
       title: "Seiko 5 Automatic Day-Date Silver Dial",
@@ -20,7 +31,7 @@ export type WatchListing = {
       shipping: 6,
       totalCost: 54,
       condition: "working",
-      imageUrl: "https://via.placeholder.com/150",
+      imageUrl: brandLogos.Seiko,
       listingUrl: "#",
       description: "Classic Seiko 5 automatic with stainless steel case."
     },
@@ -32,7 +43,7 @@ export type WatchListing = {
       shipping: 5,
       totalCost: 27,
       condition: "working",
-      imageUrl: "https://via.placeholder.com/150",
+      imageUrl: brandLogos.Casio,
       listingUrl: "#",
       description: "Iconic Casio digital watch with stainless bracelet."
     },
@@ -44,7 +55,7 @@ export type WatchListing = {
       shipping: 4,
       totalCost: 22,
       condition: "working",
-      imageUrl: "https://via.placeholder.com/150",
+      imageUrl: brandLogos.Timex,
       listingUrl: "#",
       description: "Vintage sports watch with chronograph features."
     },
@@ -56,7 +67,7 @@ export type WatchListing = {
       shipping: 10,
       totalCost: 105,
       condition: "working",
-      imageUrl: "https://via.placeholder.com/150",
+      imageUrl: brandLogos.Citizen,
       listingUrl: "#",
       description: "Solar-powered titanium field watch."
     },
@@ -68,20 +79,48 @@ export type WatchListing = {
       shipping: 8,
       totalCost: 68,
       condition: "working",
-      imageUrl: "https://via.placeholder.com/150",
+      imageUrl: brandLogos.Orient,
       listingUrl: "#",
       description: "Elegant automatic dress watch with domed crystal."
     }
   ];
   
-  const generatedItems: WatchListing[] = Array.from({ length: 70 }).map((_, i) => {
-    const brands = ["Seiko", "Casio", "Timex", "Citizen", "Orient", "Fossil", "Swatch"];
-    const styles = ["Vintage", "Field", "Dress", "Digital", "Sport", "Chronograph", "Dive"];
-    const marketplaces = ["ebay", "etsy", "chrono24", "other"] as const;
-    const conditions = ["working", "untested", "broken"] as const;
+  const generatedItems: WatchListing[] = Array.from({ length: 100 }).map((_, i) => {
+    const brands = [
+      "Seiko",
+      "Casio",
+      "Timex",
+      "Citizen",
+      "Orient",
+      "Fossil",
+      "Swatch",
+    ] as const;
+    
+    const styles = [
+      "Vintage",
+      "Field",
+      "Dress",
+      "Digital",
+      "Sport",
+      "Chronograph",
+      "Dive",
+    ] as const;
+    
+    const marketplaces = [
+      "ebay",
+      "etsy",
+      "chrono24",
+      "other",
+    ] as const;
+    
+    const conditions = [
+      "working",
+      "untested",
+      "broken",
+    ] as const;
   
-    const brand = brands[i % brands.length];
-    const style = styles[i % styles.length];
+    const brand = brands[i % brands.length] as (typeof brands)[number];
+    const style = styles[i % styles.length] as (typeof styles)[number];
     const marketplace = marketplaces[i % marketplaces.length];
     const condition = conditions[i % conditions.length];
   
@@ -96,7 +135,7 @@ export type WatchListing = {
       shipping,
       totalCost: price + shipping,
       condition,
-      imageUrl: "https://via.placeholder.com/150",
+      imageUrl: brandLogos[brand], // ← use logo instead of placeholder
       listingUrl: "#",
       description: `${style} style watch from ${brand} with classic design.`
     };
