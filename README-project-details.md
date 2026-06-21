@@ -1,279 +1,106 @@
-# Watch Discovery Tool — Project Details & Decision Log
+# Watch Discovery Tool — WatchScout
 
-> **Purpose of this document:** Support the submission walkthrough. It maps the original brief to what was built, explains scoping decisions, and suggests a presentation structure for evaluators.
 
----
+## Core User Problem
 
-## 1. Executive Summary
+The collector behind this brief isn't asking for another marketplace — they're asking for relief from manually checking sites and hoping they don't miss something.
 
-The original brief asked for a tool that **syncs live marketplace listings**, applies **personal preference filters** (budget, condition, “interesting”), and **highlights purchase candidates**.
+**The issue:**
 
-Within a **48-hour window** and without marketplace API access, I scoped the problem differently:
+> I collect vintage Timex watches and want a better way to stay on top of interesting listings across the market. Today, finding good pieces means manually checking multiple sites, remembering what I like, and hoping I don't miss something.
 
-| Original intent | My interpretation & delivery |
-|-----------------|----------------------------|
-| Stay on top of listings across sites | Single **Discover** view with normalized mock listings from eBay, Etsy, Chrono24 |
-| Match my preferences | **Filters** + **saved search lenses** that encode constraints in one click |
-| Remember what I like | **Curated lists** — user-defined collections, not system recommendations |
-| Highlight candidates | **Preset lenses** (e.g. “Vintage Timex Collector”) surface the right subset; user saves watches worth attention |
+**What they want the tool to do:**
 
-**The bet:** Validate the *discovery and curation workflow* first — aggregation, filtering, shipping-aware totals, and low-friction saving — before investing in live ingestion or automated ranking.
+- Sync active listings from key marketplaces (eBay, Chrono24, and any others you think are worth including).
+- Surface listings that match their preferences:
+  - Less than **$50** in total cost (including shipping to M6K1V8)
+  - Isn't explicitly broken — willing to replace a battery.
+  - Is interesting. Collabs, deadstock, vintage models. Three watches they've bought recently:
+    - https://www.ebay.ca/itm/377073705816
+    - https://www.ebay.ca/itm/117111976291
+    - https://www.etsy.com/ca/listing/4469739360
+- Highlight and identify potential purchase candidates worth paying attention to.
 
-This aligns with the brief’s own guidance: *“Scope it to something you can do well in the time you have”* and *“We're not looking for the most technically complex solution.”*
+### My perspective
 
----
+The brief asks for sync, filters, and highlighting good candidates. All of that makes sense - but what stood out to me is the day-to-day friction of  manually checking eBay, Chrono24, Etsy, and other sites, again and again, with nothing pulling it together in one place - this is the pain point. 
 
-## 2. The Original Ask (Recap)
+The other half is remembering. A watch that catches your eye on Tuesday is easy to forget by Thursday — unless you can actually recollect what you’ve seen and where you saw it.
 
-From `0. docs/project-requirements.md`, the collector wanted:
+That’s the core user problem I wanted to solve:
 
-1. **Sync active listings** from eBay, Chrono24, and other marketplaces
-2. **Surface listings** matching:
-   - Total cost **< $50 CAD** including shipping to **M6K 1V8**
-   - **Not explicitly broken** (battery replacement OK)
-   - **Subjectively interesting** — collabs, deadstock, vintage Timex (with example purchase links)
-3. **Highlight potential purchase candidates** worth paying attention to
+1. **Cut down the manual checking** — one place to browse instead of bouncing between sites.
+2. **Make it easy to hold onto the good ones** — save watches worth coming back to so you’re not relying on memory.
 
-Deliverables: build plan, working MVP, and a walkthrough of decisions and tradeoffs.
+The $50 cap, condition rules, and “interesting” stuff still matter. But they only help if you fix the core user problem.
 
----
-
-## 3. What I Built (The Scoped Alternative)
-
-A **frontend-only MVP** (`watch-app/`) that demonstrates a complete discovery → evaluate → curate loop using representative data.
-
-### Core experience
-
-- **Discover tab** — Search-first browsing with filters (condition, marketplace, max total price, sort by cost), optional Canadian postal code for **shipping estimates**, and a **saved search bar** with preset and custom “lenses”
-- **My Lists tab** — Saved watches grouped by user-defined lists (default: Favorites); compare and remove without leaving the app
-- **Save to list** — Modal with multi-list membership, inline list creation, minimal interruption to browsing
-
-### How the brief’s constraints are represented today
-
-The preset **“Vintage Timex Collector”** lens directly encodes the brief’s example preferences:
-
-- Search: `Timex`
-- Condition: not broken
-- Max total: $50
-- Sort: lowest total first
-- Postal code: `M6K 1V8`
-
-Users can save their own lenses (persisted in `localStorage`) when they dial in a combination that works for them.
-
-### Technical shape
-
-| Layer | Choice | Why |
-|-------|--------|-----|
-| React 19 + TypeScript + Vite | Fast iteration, type-safe data model | Fits 48h solo build |
-| Mock listings (`mockListings.ts`) | Controlled dataset | No API keys, no scraping infra, reproducible demo |
-| Normalized `WatchListing` type | Same fields regardless of source | Ready for future ingestion swap |
-| `filterAndSortWatches.ts` | Decoupled from UI | Ingestion can plug in later without rewriting filters |
-| `shippingEstimate.ts` | Zone + marketplace multipliers | Makes “total cost to my door” tangible without live shipping APIs |
-| `localStorage` | Postal code + user saved searches | Persistence where it matters most for repeat visits |
-| In-memory lists | Session-only curation | Simpler MVP; lists are the “working set” during a browse session |
-
-Full implementation reference: `0. docs/Build spec.md`.
+That’s what I scoped the build around.
 
 ---
 
-## 4. Requirements Mapping
+## Constraints
 
-| Requirement (brief / PRD) | Status | Notes |
-|---------------------------|--------|-------|
-| Aggregate listings from multiple marketplaces | **Partial** | Multiple sources in one UI; **mock data**, not live sync |
-| Normalize listing structure | **Done** | Shared `WatchListing` model across eBay, Etsy, Chrono24, other |
-| Filter by max total cost (≤ $50) | **Done** | Max price filter; preset lens defaults to $50 |
-| Exclude broken / for-parts listings | **Done** | “Not broken” condition filter |
-| Shipping to M6K 1V8 in total cost | **Done** | Postal code field + estimate logic; preset uses M6K 1V8 |
-| Search by keyword | **Done** | Title, marketplace, description |
-| Sort listings | **Partial** | By total cost (low/high); not by title or marketplace |
-| Save watches to curated lists | **Done** | Multi-list support, create lists inline |
-| List management (add, remove, view) | **Done** | Clear list, remove individual watches |
-| Navigate to original listing | **Partial** | Model includes `listingUrl`; mock data mostly uses placeholders |
-| Expand listing details | **Not built** | Description shown on card; no expand/collapse or detail page |
-| Highlight / identify purchase candidates | **Reframed** | **Saved search lenses** + user curation replace automated highlighting |
-| Detect “interesting” (collabs, deadstock, style) | **Reframed** | User judgment via search terms + lists; no ML or similarity engine |
-| Live marketplace sync | **Not built** | Explicitly out of scope for MVP (see PRD + business plan) |
-| User accounts | **Not built** | Browser-only persistence |
-| Alerts for new listings | **Not built** | Future enhancement |
+A few things shaped what was realistic before I decided what to build:
 
-**Legend:** *Done* = implemented in MVP · *Partial* = addressed differently or incompletely · *Reframed* = same user need, different product mechanism · *Not built* = consciously deferred
+- **48-hour time box** — focus on a working discovery → filter → save loop, not production infra or integrations
+- **No live marketplace APIs** — eBay, Chrono24, and Etsy need keys, approval, and ongoing maintenance — use representative mock listings with a normalized data model so live sync can plug in later
+- **Exact shipping is hard without seller details** — estimate all-in cost from postal code + marketplace rules instead of live carrier quotes
+- **“Interesting” is subjective** — collabs, deadstock, and taste don’t map cleanly to fixed rules, creating a recommendation or scoring system is too much for the this project
+- **Highlighting candidates without purchase history or ML** — no structured data from the brief’s example URLs to train on — surface candidates through transparent saved searches, not opaque scores or badges
+- **Solo build, frontend-first** — skip accounts, backend, and alerts for the MVP
 
 ---
 
-## 5. Key Decisions & Rationale
+## Scope
 
-### Decision 1: Mock data instead of live marketplace APIs
+I scoped the build around a few concrete pillars — not every feature in the brief on day one, but the pieces that would actually move the needle on manual checking and remembering.
 
-**Context:** eBay, Etsy, and Chrono24 require API approval, keys, rate limits, and ongoing maintenance. Real shipping quotes need seller location and carrier data not available in a weekend build.
+### 1. One place to browse - Discovery Experience
 
-**Decision:** Ship a **representative curated dataset** with a normalized schema and decoupled filter layer.
+Stop bouncing between eBay, Chrono24, and Etsy. Pull listings into a single discovery view with a consistent layout so the collector can scan everything in one sitting — not three separate tabs.
 
-**Tradeoff:** Less “real” inventory, but reliable demo, full control over edge cases (broken vs working, price spread, marketplace mix), and no blocked progress on API paperwork.
+For the MVP, that means representative data from multiple marketplaces in one feed. Live sync is the natural next step, but the workflow has to work first.
 
-**What this validates:** Can a single interface + filters + total-cost awareness reduce manual cross-site browsing?
+### 2. Filter down to what actually fits
 
----
+The brief’s rules aren’t optional — **under $50 all-in**, **not explicitly broken**, and room to search for the stuff they actually care about (Timex, collabs, deadstock, etc.).
 
-### Decision 2: Saved search lenses instead of automated candidate highlighting
+I wanted filtering and search to do the heavy lifting so they’re not wading through junk. Shipping to **M6K 1V8** matters too — list price alone doesn’t tell you if something’s really in budget.
 
-**Context:** The brief asks to “highlight potential purchase candidates.” That implies ranking, scoring, or badges — which needs either live data, purchase history ingestion, or ML.
+### 3. Saved searches to surface good candidates
 
-**Decision:** Introduce **discovery lenses** — named snapshots of search + filters + postal code. Presets model the collector’s stated preferences; users save custom lenses for recurring hunts.
+The brief also asks to **highlight potential purchase candidates** — watches worth paying attention to. Rather than hiding how this works with a black-box score, I leaned into letting users quickly save and reuse their own search configurations.
 
-**Tradeoff:** The system does not *proactively* flag “buy this.” The user (or a preset) defines what “candidate” means. This is transparent and matches the PRD assumption that **user-defined organization beats opaque recommendations** in MVP.
+**Saved searches** — snapshots of search terms, filters, and postal code — let them save a setup once and apply it again in one click. The **“Vintage Timex Collector”** preset is basically the brief’s constraints as a saved search. They can create their own when they dial in something that works.
 
-**Connection to brief:** “Vintage Timex Collector” is effectively a saved query for the exact constraints in the requirements doc.
+### 4. Curated lists to hold onto the good ones
 
----
+This is the “remembering” half of the problem. When something catches their eye, they should be able to **save it to a list** — Favorites, Potential Purchases, whatever they name — and come back later without trying to recall which site it was on.
 
-### Decision 3: Curated lists instead of a recommendation engine
+Multi-list support matters here: one watch might be “maybe buy” and “cool vintage find” at the same time.
 
-**Context:** “Interesting” is subjective — collabs, deadstock, specific eras. Hard to encode in rules alone.
+### 5. Build something that can grow
 
-**Decision:** Let the user **save watches to named lists** (Potential Purchases, Vintage Finds, etc.) with multi-list membership.
+I didn’t want to hardcode this around one exact criteria — Timex, $50, M6K 1V8 — and call it done. Collectors change what they’re looking for, add new marketplaces, tighten or loosen their rules. The product should be able to move with that.
 
-**Tradeoff:** More manual than auto-recommendations, but honest about MVP limits and creates a **preference signal** for future personalization (saved watches = training data later).
+So I kept the build fairly generic: listings look the same whether they come from eBay, Etsy, or somewhere else; filtering and search sit on their own; saving to lists isn’t tied to any one filter combo. If “interesting” means something different next month, or they want to track a new brand, the app shouldn’t need a rewrite — just updated data or tweaked settings.
 
----
-
-### Decision 4: Shipping estimates vs. exact shipping
-
-**Context:** True shipping to M6K 1V8 requires seller address, item weight, and carrier — unavailable in mock data.
-
-**Decision:** **Approximate** shipping from base mock shipping × Canadian postal zone × marketplace multiplier.
-
-**Tradeoff:** Estimates are labeled as such; still supports the core budget question (“Is this likely under $50 all-in?”).
+That’s the idea: solve today’s problem without limiting capabilities in the future. 
 
 ---
 
-### Decision 5: Frontend-only, no backend
+## Outcome
 
-**Context:** 48-hour constraint; evaluation focuses on product thinking, not DevOps.
+If WatchScout is doing its job, the collector spends less time manually checking sites and less mental energy trying to remember what they’ve already seen.
 
-**Decision:** All state in React; persist only postal code and user-created saved searches in `localStorage`. Lists reset on refresh.
+**What that looks like in practice:**
 
-**Tradeoff:** No cross-device sync, but zero deployment complexity and fast local demo (`README - setup.md`).
+- **One session, one place** — they open the app and scan listings from eBay, Chrono24, and Etsy together instead of checking three sites separately
+- **Less noise, faster shortlist** — filters, search, and all-in cost (with shipping estimates) cut the pile down to watches that actually fit their rules — under budget, not broken, worth a look
+- **A saved search they can rerun** — apply the same filters and criteria every time without rebuilding from scratch
+- **Nothing good gets lost** — watches worth a second look land in curated lists they can come back to days later, with context still attached
+- **Less friction than manual browsing** — the whole discover → narrow → save → revisit loop takes fewer steps than their current workflow
 
----
-
-### Decision 6: Search-first UX with tab navigation (not routes)
-
-**Context:** UX spec emphasizes discovery as primary, lists as secondary.
-
-**Decision:** **Discover / My Lists** tabs in header; no React Router.
-
-**Tradeoff:** Simpler state management; sufficient for MVP demo scope.
+**What I’m proving with the MVP:** that this workflow feels better than tab-hopping and mental note-taking — even before live marketplace sync or smarter recommendations are in place. If that holds, adding real data and alerts is worth doing. If it doesn’t, fancier tech won’t fix it.
 
 ---
-
-### Decision 7: UI polish investment in Phase 2
-
-**Context:** Time box forces prioritization.
-
-**Decision:** After core flows worked, invested in a **unified design system** (warm vintage palette, shared components, accessible modals, card layout).
-
-**Tradeoff:** Less time for backend/integration features; stronger first impression and clearer hierarchy for walkthrough.
-
----
-
-## 6. What I Chose Not to Build (And Why)
-
-| Deferred | Reason |
-|----------|--------|
-| Live listing sync / scraping | API access, ToS, infra, and reliability risk exceed MVP window |
-| ML / similarity to past purchases | Needs data pipeline + model iteration; brief examples are URLs, not structured features |
-| Automated “candidate” badges | Would be misleading on static mock data; lenses + lists are honest substitutes |
-| User accounts & cloud sync | Not required to prove discovery UX; adds auth + storage scope |
-| List persistence across sessions | Conscious cut; saved searches persist, lists are session “working memory” |
-| Sort by title / marketplace | Price sort covers primary budget use case; time spent elsewhere |
-| Listing detail page / expand | Card shows key fields; external navigation deferred until real URLs |
-| Notifications / alerts | Depends on live sync; natural Phase 2 after ingestion |
-| Purchase / bid automation | Out of product scope |
-
----
-
-## 7. Suggested Presentation Structure
-
-Use this as a ~15–20 minute walkthrough outline. Adjust depth based on evaluator questions.
-
-### Opening (2 min)
-
-- **Problem:** Fragmented marketplace browsing for vintage Timex under strict budget/condition rules
-- **Honest framing:** “I did not build live sync or auto-recommendations. I built the discovery and curation workflow I believe must work first — and encoded your constraints as reusable lenses.”
-
-### Demo flow (8–10 min)
-
-1. **Land on Discover** — Immediate feed; no onboarding
-2. **Apply “Vintage Timex Collector” preset** — Show $50 cap, not broken, M6K 1V8, sorted by total
-3. **Enter postal code** — Shipping estimates update totals on cards
-4. **Tweak filters / search** — e.g. Etsy-only preset for deadstock/collab browsing
-5. **Save current search as custom lens** — Shows persistence after refresh
-6. **Save a watch to a list** — Multi-list modal, create new list
-7. **Switch to My Lists** — Review saved watches, remove, compare totals
-
-### Decisions & tradeoffs (5 min)
-
-- Walk through **Section 5** above — emphasize *why* mock data and *why* lenses over black-box ranking
-- Call out **modular ingestion** (`WatchListing` + `filterAndSortWatches`) as the intentional extension point
-
-### What’s under the hood (3 min, if asked)
-
-- Data flow: `mockListings` → enrich with shipping → filter/sort → grid
-- Persistence: what survives refresh vs what doesn’t
-- Preset definitions: `presetSavedSearches.ts`
-
-### What I’d do next (2 min)
-
-Prioritized roadmap:
-
-1. **Live ingestion** — eBay Browse API first; normalize into existing `WatchListing` shape
-2. **Real shipping** — Seller postal code + carrier API or cached estimates
-3. **Persist lists** — Supabase/Firebase or similar
-4. **Candidate surfacing v2** — Rule-based badges on top of lenses (e.g. “Under budget”, “Matches saved list patterns”)
-5. **Alerts** — Notify when new listings match a saved lens
-6. **Preference learning** — Use saved lists as signals for ranking (post-validation)
-
-### Close (1 min)
-
-- Restate success criteria met: filter, discover, save, revisit, fewer steps than manual multi-site browsing
-- Invite questions on any cut scope
-
----
-
-## 8. How This Maps to Evaluation Criteria
-
-| What evaluators look for | Where to point |
-|--------------------------|----------------|
-| Ambiguous problem → concrete scope | Sections 1, 5, 6; `0. docs/PRD.md`, `business-one-pager.md` |
-| Product thinking, not just code | Saved lenses vs auto-rank; lists vs ML; shipping estimates labeled honestly |
-| Clear communication | This doc + live demo script (Section 7) |
-| Understanding how it works | `0. docs/Build spec.md`, `App.tsx` orchestration, `filterAndSortWatches.ts`, `shippingEstimate.ts` |
-
----
-
-## 9. Related Documentation
-
-| Document | Role |
-|----------|------|
-| `0. docs/project-requirements.md` | Original build brief |
-| `0. docs/PRD.md` | Product requirements derived from the brief |
-| `0. docs/business-one-pager.md` | Problem, assumptions, MVP scope at proposal stage |
-| `0. docs/UX spec.md` | Interaction design for Discover, Save modal, My Lists |
-| `0. docs/Build spec.md` | As-built technical reference |
-| `README - setup.md` | Local run instructions for evaluators |
-
----
-
-## 10. Open Items for Review
-
-Before presenting, consider whether to adjust messaging on:
-
-- [ ] **Listing URLs** — Wire mock cards to real example URLs from the brief for stronger “marketplace” feel
-- [ ] **Candidate language** — Rename “lens” to “saved hunt” or add subtle “matches your budget” badges on filtered results
-- [ ] **List persistence** — Quick `localStorage` win if evaluators expect saved lists to survive refresh
-- [ ] **Sort options** — Add title/marketplace sort if PRD parity matters for the conversation
-
----
-
-*Last updated: June 2026 — reflects MVP as built in `watch-app/`.*
