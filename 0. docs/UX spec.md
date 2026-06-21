@@ -1,358 +1,158 @@
-# Watch Discovery Tool – UX Specification
+# WatchScout – UX Specification
 
- 
-
-## Overview
-
- 
-
-The Watch Discovery Tool enables users to efficiently discover, evaluate, and organize second-hand watch listings from multiple marketplaces.
-
- 
-
-The experience prioritizes:
-
-- Fast discovery
-
-- Minimal cognitive load
-
-- User-controlled curation through curated lists
-
-- Clean separation between browsing and saved collections
-
- 
+High-level interaction model for the Watch Discovery Tool MVP. For implementation detail, see `Build spec.md`.
 
 ---
 
- 
+## Overview
+
+WatchScout helps collectors discover, evaluate, and organize second-hand watch listings from multiple marketplaces in one place — without bouncing between sites or relying on memory.
+
+The experience prioritizes:
+
+- **One place to browse** — aggregated listings in a single feed
+- **Transparent narrowing** — search, filters, and all-in cost estimates surface what fits
+- **Reusable discovery setups** — saved searches apply a full lens in one click
+- **Low-friction curation** — save watches to user-defined lists and revisit later
+- **Clear separation** — discovery and saved collections live in distinct tabs
+
+---
 
 ## Primary User Flow
 
- 
-
 ```text
-
-Discover Listings
-
+Open WatchScout (Discover tab)
       ↓
-
-Search / Browse Listings
-
+Browse default listings OR apply a saved search
       ↓
-
-Review Results
-
+(Optional) Enter Canadian postal code for shipping estimates
       ↓
-
-Save Watch to List
-
+Search + filter to narrow results
       ↓
-
-Select Existing List OR Create New List
-
+Review listing cards (item price, shipping, total cost)
       ↓
-
-Continue Browsing
-
+Save interesting watches → toggle into one or more lists
       ↓
-
-(Optional) Open My Lists
-
+Continue browsing (discovery is never blocked)
       ↓
-
-Review Saved Watches by List
-
+(Optional) Save current search/filters as a custom saved search
+      ↓
+(Optional) Switch to My Lists tab
+      ↓
+Review saved watches by list · search/sort within a list · remove or clear
 ```
 
-## Screen 1: Discovery Dashboard
+---
 
-### Purpose
+## App Structure
 
-The Discovery Dashboard provides a clean, search-first experience for browsing watch listings across multiple marketplaces.
+Two tabs in the header — no separate routes:
 
-It prioritizes fast discovery and browsing while keeping saved collections accessible through secondary navigation, without interrupting the primary search and exploration flow.
+| Tab | Purpose |
+|-----|---------|
+| **Discover** | Search, filter, apply saved searches, browse results, save watches |
+| **My Lists** | View and manage saved watches grouped by list |
 
-### Layout Structure
+Discovery is the default tab. My Lists is secondary navigation that does not interrupt the browse flow.
 
-#### Header (Navigation Only)
+---
 
-- Product Title: Watch Discovery Tool
-- Navigation Link: My Lists
-“My Lists” is intentionally placed in the header as a secondary navigation element so that it does not interrupt the primary discovery experience.
+## Discover View
 
-#### Primary Interaction Area
+### Search & shipping
 
-##### Search Bar (Primary Action)
+- **Search** — keyword match across title, marketplace, and description
+- **Shipping destination** — optional Canadian postal code (e.g. `A1A 2B3`) recalculates estimated shipping and total cost per listing
+- Postal code persists across sessions; estimates are approximate by destination and marketplace
 
-- Central search input
-- Placeholder: “Search watches (brand, model, style, marketplace)...”
-- Executes search across aggregated marketplace listings
-The search bar is the primary entry point into the product experience.
+### Discovery lenses (saved searches)
 
-#### Results Section
+Named snapshots of search query + filters + postal code. One click applies the full setup.
 
-##### Listings Feed
+- **Preset lenses** ship with the app (e.g. “Vintage Timex Collector” — Timex, under $50 all-in, not broken, sorted low to high)
+- **Custom lenses** — user saves the current discovery state when it doesn’t already match an existing lens
+- Active lens is highlighted; modifying search or filters deselects it and shows a “custom search” hint
+- Lenses can be removed (including presets); user-created lenses persist in browser storage
 
-A list of watch listings displayed immediately on page load (default state) and dynamically updated based on search input.
+### Filters
 
-Each listing card includes:
+Inline filter bar below saved searches:
 
-- Image
-- Title
-- Marketplace Source
-- Price
-- Shipping Cost
-- Total Cost
-- Condition
-- ⭐ Save to List action
-### Default State Behavior
+- Condition (all, not broken, working, untested, broken)
+- Marketplace (all, eBay, Etsy, Chrono24, other)
+- Sort (default, price low → high, price high → low)
+- Max total price
+- Clear filters / reset entire discovery state when no results
 
-When no search query is entered:
+### Results
 
-- A default feed of recent or relevant listings is displayed
-- Users can browse immediately without needing to perform a search
-### User Actions
+- Listings grid updates immediately as search, filters, or postal code change
+- Results meta shows count and active lens name when applicable
+- Empty state offers reset or clear-filters actions
 
-#### Primary Actions
+### Listing card
 
-- Search listings
-- Browse results
-- Open listing details
-- Save watch to a curated list
-#### Secondary Actions
+Each card shows:
 
-- Navigate to “My Lists” via header
-### Design Principles
+- Image, title, marketplace, condition
+- Item price, shipping (estimated when postal code set), total cost
+- Truncated description
+- Save action and which lists the watch is already in
 
-#### 1. Search-First Discovery
+---
 
-Search is the primary interaction model. It is the main way users initiate exploration of listings.
+## Save to List
 
-#### 2. Tight Search-to-Results Coupling
+Triggered from any listing card’s **Save** button.
 
-Search input and results are visually and functionally connected, with no intermediate UI elements that interrupt flow.
+- Modal lists existing lists with **toggle** selection — a watch can belong to multiple lists
+- **Create new list** inline; watch is added on creation
+- **Done** closes the modal; user returns to browsing without a confirmation step
+- Default list: **Favorites** (protected from deletion)
 
-#### 3. Progressive Disclosure
+Saving is intentionally non-blocking: no forced list choice before continuing discovery.
 
-Advanced functionality (curated lists) is accessible but intentionally de-emphasized to avoid competing with the primary discovery experience.
+---
 
-#### 4. Clear Hierarchy of Intent
+## Save Discovery Lens
 
-- Primary: Discover watches
-- Secondary: Save watches
-- Tertiary: Organize saved watches
-## Screen 2: Save to List Modal
+Triggered when the current search/filters/postal code don’t match an existing lens.
 
-### Purpose
+- Modal summarizes what will be saved (search terms, filters, ship-to)
+- User provides a name and optional description
+- Saved lens appears as a pill in the discovery bar and becomes the active lens
 
-The Save to List modal enables users to quickly store interesting watches into curated collections with minimal friction.
+This is how the product surfaces **potential purchase candidates** — through transparent, user-defined search setups rather than opaque scores or badges.
 
-It prioritizes fast saving over complex organization.
+---
 
-### Entry Point
+## My Lists View
 
-Triggered when a user clicks:
+Shown only when at least one list contains watches; otherwise an empty state directs the user back to Discover.
 
-- ⭐ Save (on a watch listing card)
+- Lists render as sections (Favorites, custom lists)
+- Shipping estimates reflect the postal code set on Discover (with a note if none set)
+- Per-list **search** and **sort** to compare saved watches
+- **Remove** individual watches or **Remove all** from a list
+- Save modal is available from list cards to adjust list membership
 
-### Step 1: Save Modal
+---
 
-```text
+## Design Principles
 
------------------------------------------
-
-Save Watch
-
------------------------------------------
-
- 
-
-Select a list:
-
- 
-
-(•) Potential Purchases
-
-( ) Vintage Finds
-
-( ) Favorites
-
-( ) Timex Collection
-
- 
-
------------------------------------------
-
- 
-
-[ + Create New List ]
-
-[ Save ]
-
------------------------------------------
-
-```
-
-### Step 2A: Save to Existing List (Fast Path)
-
-#### Flow
-
-1. User selects an existing list
-
-2. User clicks “Save”
-
-3. Watch is added to the selected list
-
-4. Modal closes immediately
-
-5. User returns to browsing experience
-
-#### UX Principle
-
-Saving should be a single, low-friction action that does not interrupt discovery.
-
-### Step 2B: Create New List
-
-#### Flow
-
-1. User clicks “+ Create New List”
-
-### Step 3: Create List Modal
-
-```text
-
------------------------------------------
-
-Create New List
-
------------------------------------------
-
- 
-
-List Name:
-
-[ Vintage Field Watches        ]
-
- 
-
-Optional Description:
-
-[ Watches with military / field styling ]
-
- 
-
------------------------------------------
-
- 
-
-[ Cancel ]        [ Create & Save ]
-
------------------------------------------
-
-```
-
-### Step 4: Post-Creation Behavior
-
-After creation:
-
-- A new list is created
-- The selected watch is automatically added to the new list
-- Modal closes
-- User is returned to the Discovery Dashboard
-No additional confirmation step is required.
-
-## Screen 3: My Lists
-
-### Purpose
-
-The My Lists screen allows users to view, manage, and revisit saved watches organized into curated collections.
-
-### Layout Structure
-
-#### List Overview
-
-A simple list of user-created collections:
-
-- Potential Purchases
-- Vintage Finds
-- Favorites
-- Custom user-created lists
-#### List Detail View
-
-When a list is selected, it displays:
-
-- Watch cards
-  - Image
-  - Title
-  - Marketplace Source
-  - Total Cost
-  - Condition
-### User Actions
-
-- Switch between lists
-- Remove watches from a list
-- Open original marketplace listing
-- Review saved watches for comparison
-### Navigation Flow
-
-```text
-
-Discovery Dashboard
-
-      ↓
-
-Search / Browse Listings
-
-      ↓
-
-Save Watch → Select List / Create List
-
-      ↓
-
-Continue Browsing
-
-      ↓
-
-My Lists (optional navigation)
-
-      ↓
-
-View Saved Collections
-
-```
-
-### Design Principles
-
-#### 1. User-Controlled Curation
-
-The system does not define what is “interesting.” Users define this through curated lists.
-
-#### 2. Low Friction Saving
-
-Saving a watch requires minimal interaction:
-
-- One click to initiate save
-- One quick selection to confirm
-#### 3. Fast Return to Browsing
-
-Saving a watch never interrupts or blocks the discovery experience.
-
-#### 4. Lists as Meaning Containers
-
-Lists represent user-defined intent such as:
-
-- “Vintage Finds”
-- “Potential Purchases”
-- “Timex Collection”
-They are not system-generated tags or recommendations.
-
-#### 5. Separation of Concerns
-
-- Discovery → Browse listings
-- Curation → Organize saved watches
-- Review → Evaluate saved collections
-#### 6. Progressive Engagement
-
-Users begin with browsing and naturally evolve into structured curation without requiring upfront configuration or onboarding complexity.
-
- 
+1. **Browse first** — users can scan listings immediately; search and filters refine, they don’t gate entry
+2. **All-in cost matters** — total cost including estimated shipping is visible before saving
+3. **Transparent candidate surfacing** — saved searches make “what’s worth attention” explicit and reusable
+4. **User-controlled curation** — lists express intent (“Potential Purchases”, “Vintage Finds”); the system does not auto-organize
+5. **Low-friction saving** — one click to open save modal; toggles and inline list creation; fast return to browsing
+6. **Separation of concerns** — Discover for exploration; My Lists for review and comparison
+7. **Progressive engagement** — no onboarding required; users start browsing and naturally adopt saved searches and lists
+
+---
+
+## Out of Scope (MVP UX)
+
+- User accounts and cross-device sync
+- Live marketplace links as primary navigation (listing URLs are placeholders in mock data)
+- List persistence across browser sessions
+- Alerts, recommendations, or purchase workflows
