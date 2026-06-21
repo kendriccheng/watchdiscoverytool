@@ -15,6 +15,7 @@ import {
 } from "./components/ui";
 import { mockListings } from "./data/mockListings";
 import type { WatchListing } from "./data/mockListings";
+import { useDebouncedValue } from "./hooks/useDebouncedValue";
 import { useSavedSearches } from "./hooks/useSavedSearches";
 import type {
   ConditionFilter,
@@ -29,6 +30,16 @@ import {
   discoveryStateMatchesSavedSearch,
 } from "./utils/discoveryState";
 import { filterAndSortDiscoveryListings } from "./utils/filterAndSortWatches";
+import {
+  clearStoredPostalCode,
+  loadStoredPostalCode,
+  saveStoredPostalCode,
+} from "./utils/postalCodeStorage";
+import {
+  estimateShipping,
+  getValidPostalCode,
+  stripPostalInput,
+} from "./utils/shippingEstimate";
 
 function App() {
   const { allSavedSearches, getSearchById, saveSearch, deleteSearch } =
@@ -57,8 +68,11 @@ function App() {
       .some((w) => w.id === watchId);
 
   const [view, setView] = useState<"discover" | "lists">("discover");
-  
-  const [shippingLocation, setShippingLocation] = useState("");
+
+  const [shippingLocation, setShippingLocation] = useState(() =>
+    loadStoredPostalCode()
+  );
+  const [postalFieldTouched, setPostalFieldTouched] = useState(false);
 
   const activeSavedSearch = activeSavedSearchId
     ? getSearchById(activeSavedSearchId)
@@ -94,7 +108,10 @@ function App() {
     const next = applySavedSearch(search);
     setSearchQuery(next.searchQuery);
     setFilters(next.filters);
-    setShippingLocation(next.shippingLocation);
+    setShippingLocation(
+      getValidPostalCode(next.shippingLocation) ?? next.shippingLocation
+    );
+    setPostalFieldTouched(false);
     setActiveSavedSearchId(search.id);
   };
 
@@ -105,9 +122,39 @@ function App() {
   const handleResetDiscovery = () => {
     setSearchQuery("");
     setShippingLocation("");
+    setPostalFieldTouched(false);
+    clearStoredPostalCode();
     setFilters({ ...DEFAULT_DISCOVERY_FILTERS });
     setActiveSavedSearchId(null);
   };
+
+  const debouncedShippingLocation = useDebouncedValue(shippingLocation, 300);
+
+  const validPostalCode = useMemo(
+    () => getValidPostalCode(shippingLocation),
+    [shippingLocation]
+  );
+
+  const estimatePostalCode = useMemo(
+    () => getValidPostalCode(debouncedShippingLocation),
+    [debouncedShippingLocation]
+  );
+
+  const showPostalError =
+    (postalFieldTouched ||
+      stripPostalInput(shippingLocation).length >= 6) &&
+    shippingLocation.trim().length > 0 &&
+    validPostalCode === null;
+
+  const showPostalSuccess = validPostalCode !== null;
+
+  useEffect(() => {
+    if (validPostalCode) {
+      saveStoredPostalCode(validPostalCode);
+    } else if (!shippingLocation.trim()) {
+      clearStoredPostalCode();
+    }
+  }, [validPostalCode, shippingLocation]);
 
   const hasActiveFilters =
     filters.condition !== DEFAULT_DISCOVERY_FILTERS.condition ||
@@ -150,7 +197,7 @@ function App() {
       description: input.description,
       searchQuery,
       filters,
-      shippingLocation,
+      shippingLocation: validPostalCode ?? shippingLocation,
     });
 
     setActiveSavedSearchId(newSearch.id);
@@ -165,31 +212,14 @@ function App() {
     }
   };
 
-  const hasPostalCode = shippingLocation?.trim().length > 0;
-
-  const getPostalPrefix = (postal: string) =>
-    postal?.replace(/\s/g, "").substring(0, 3).toUpperCase();
-
-  const getShippingCost = (base: number, postalCode: string) => {
-    const prefix = getPostalPrefix(postalCode);
-
-    let multiplier = 1;
-
-    if (!prefix) return Math.round(base);
-
-    if (["M6K", "M5V", "M4B"].includes(prefix)) {
-      multiplier = 1.1;
-    } else if (["H2X", "V6B"].includes(prefix)) {
-      multiplier = 1.3;
-    }
-
-    return Math.round(base * multiplier);
-  };
-
   const enrichWatch = useCallback(
     (watch: WatchListing) => {
-      const shippingCost = hasPostalCode
-        ? getShippingCost(watch.shipping, shippingLocation)
+      const shippingCost = estimatePostalCode
+        ? estimateShipping(
+            watch.shipping,
+            estimatePostalCode,
+            watch.marketplace
+          )
         : null;
 
       return {
@@ -198,7 +228,7 @@ function App() {
         totalCost: watch.price + (shippingCost ?? 0),
       };
     },
-    [hasPostalCode, shippingLocation]
+    [estimatePostalCode]
   );
 
   const enrichedListings = mockListings.map(enrichWatch);
@@ -321,10 +351,51 @@ function App() {
                 <Input
                   id="shipping-location"
                   className="search-row__input search-row__input--shipping"
-                  placeholder="Postal code, e.g. M6K 1V8"
+                  placeholder="A1A 2B3"
                   value={shippingLocation}
+                  autoComplete="postal-code"
+                  aria-invalid={showPostalError}
+                  aria-describedby={
+                    showPostalError
+                      ? "shipping-location-error"
+                      : showPostalSuccess
+                        ? "shipping-location-success"
+                        : undefined
+                  }
                   onChange={(e) => setShippingLocation(e.target.value)}
+                  onBlur={(e) => {
+                    setPostalFieldTouched(true);
+                    const valid = getValidPostalCode(e.currentTarget.value);
+                    if (valid) {
+                      setShippingLocation(valid);
+                    }
+                  }}
                 />
+                <div className="search-row__postal-hint">
+                  {showPostalSuccess && (
+                    <p
+                      id="shipping-location-success"
+                      className="postal-field-hint postal-field-hint--success"
+                    >
+                      Estimated shipping to {validPostalCode}. Actual costs may
+                      vary.
+                    </p>
+                  )}
+                  {showPostalError && (
+                    <p
+                      id="shipping-location-error"
+                      className="postal-field-hint postal-field-hint--error"
+                    >
+                      Enter a valid Canadian postal code (e.g. A1A 2B3)
+                    </p>
+                  )}
+                  {!showPostalSuccess && !showPostalError && (
+                    <p className="postal-field-hint">
+                      Canada only · estimates are approximate by destination
+                      and marketplace
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -490,7 +561,17 @@ function App() {
                 ]}
               />
             ) : (
-              <div className="lists-view">
+              <>
+                {estimatePostalCode ? (
+                  <p className="lists-shipping-note">
+                    Estimated shipping based on {estimatePostalCode} (approx.)
+                  </p>
+                ) : (
+                  <p className="lists-shipping-note lists-shipping-note--muted">
+                    Add a Canadian postal code on Discover for shipping estimates
+                  </p>
+                )}
+                <div className="lists-view">
                 {listsWithWatches.map(([listName, listWatches]) => (
                   <ListSection
                     key={listName}
@@ -504,7 +585,8 @@ function App() {
                     lists={lists}
                   />
                 ))}
-              </div>
+                </div>
+              </>
             )}
           </>
         )}

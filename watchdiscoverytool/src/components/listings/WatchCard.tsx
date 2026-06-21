@@ -19,6 +19,8 @@ export default function WatchCard({
     (lists?.[listName] ?? []).some((w) => w.id === watch.id)
   );
 
+  const hasShippingEstimate =
+    watch.shipping !== null && watch.shipping !== undefined;
   const totalCost = watch.totalCost ?? watch.price + (watch.shipping ?? 0);
 
   return (
@@ -41,19 +43,30 @@ export default function WatchCard({
           <div className="watch-card__pricing">
             <div className="watch-card__price-row">
               <span className="watch-card__price-label">Item</span>
-              <span>${watch.price}</span>
+              <span className="watch-card__price-value">${watch.price}</span>
             </div>
 
-            {watch.shipping !== null && watch.shipping !== undefined && (
-              <div className="watch-card__price-row">
-                <span className="watch-card__price-label">Shipping</span>
-                <span>${watch.shipping}</span>
-              </div>
-            )}
+            <div className="watch-card__price-row">
+              <span className="watch-card__price-label">
+                {hasShippingEstimate ? "Shipping (est.)" : "Shipping"}
+              </span>
+              {hasShippingEstimate ? (
+                <span className="watch-card__price-value">
+                  ${watch.shipping}{" "}
+                  <span className="watch-card__est-suffix">est.</span>
+                </span>
+              ) : (
+                <span className="watch-card__price-value watch-card__shipping-hint">
+                  Add postal code
+                </span>
+              )}
+            </div>
 
             <div className="watch-card__total-row">
-              <span>Total cost</span>
-              <span>${totalCost}</span>
+              <span>
+                {hasShippingEstimate ? "Total (est.)" : "Total (item only)"}
+              </span>
+              <span className="watch-card__price-value">${totalCost}</span>
             </div>
           </div>
 

@@ -4,22 +4,22 @@
 
 ## 1. Overview
 
-The Watch Discovery Tool helps users discover relevant second-hand watch listings more efficiently by aggregating listings into a single interface and highlighting promising candidates based on user-defined constraints and historical purchase preferences.
+The Watch Discovery Tool helps users discover relevant second-hand watch listings more efficiently by aggregating listings into a single interface and providing tools to filter, organize, and evaluate listings.
 
-The MVP focuses on improving the discovery experience rather than providing a fully automated recommendation engine.
+The MVP focuses on improving the discovery experience by reducing marketplace fragmentation and enabling users to curate collections of watches they find interesting.
 
 ---
 
 ## 2. Goal
 
-Enable users to identify potentially interesting watch listings with less effort than manually searching across marketplaces.
+Enable users to identify and organize promising watch listings with less effort than manually searching across multiple marketplaces.
 
 The product should:
 
 - Consolidate watch listings into a single experience
 - Reduce noise through filtering
-- Surface promising candidates
-- Provide transparency into why listings are surfaced
+- Allow users to create curated collections of interesting watches
+- Support evaluation and comparison of potential purchases
 
 ---
 
@@ -30,9 +30,9 @@ Users searching for vintage or second-hand watches often:
 - Browse multiple marketplaces individually
 - Review many irrelevant listings
 - Spend significant time evaluating options
-- Lack a simple way to prioritize listings worth investigating
+- Have subjective preferences that are difficult to capture through standard filters
 
-The result is a time-consuming and fragmented discovery process.
+The result is a fragmented and time-consuming discovery process.
 
 ---
 
@@ -40,14 +40,14 @@ The result is a time-consuming and fragmented discovery process.
 
 ### Primary User
 
-Watch enthusiasts searching for affordable vintage watches online.
+Watch enthusiasts searching for affordable vintage and second-hand watches online.
 
 ### User Characteristics
 
 - Regularly browse online marketplaces
 - Have budget constraints
-- Have subjective preferences regarding style and condition
-- Enjoy making final purchasing decisions themselves
+- Possess highly personal preferences regarding style, era, condition, and brand
+- Prefer making final purchasing decisions themselves
 
 ---
 
@@ -55,9 +55,9 @@ Watch enthusiasts searching for affordable vintage watches online.
 
 As a watch collector,
 
-I want to view and filter watch listings in one place,
+I want to browse and filter watch listings from a single interface,
 
-So that I can quickly identify watches worth considering without manually reviewing every listing.
+So that I can quickly identify and organize watches worth considering without manually searching multiple marketplaces.
 
 ---
 
@@ -66,15 +66,16 @@ So that I can quickly identify watches worth considering without manually review
 ### MVP Success Indicators
 
 - User can successfully filter listings
-- User can identify candidate watches from a larger pool
-- User understands why listings were surfaced
-- User can complete discovery workflow within a few interactions
+- User can discover watches matching their constraints
+- User can save watches to curated lists
+- User can easily revisit and compare saved watches
+- User can complete discovery workflows in fewer steps than manual marketplace browsing
 
 ### Out of Scope
 
-- Conversion to purchase
-- Long-term engagement
-- Recommendation accuracy benchmarking
+- Purchase conversion
+- Long-term engagement metrics
+- Automated recommendation accuracy
 
 ---
 
@@ -138,42 +139,53 @@ Users shall be able to exclude listings that are explicitly marked as:
 
 ---
 
-## FR5: Candidate Identification
-
-The system shall identify listings that satisfy predefined recommendation criteria.
-
-### Example Criteria
-
-- Within budget
-- Working condition
-- Similar characteristics to historical purchases
-
-Candidate listings shall be visually distinguished from standard listings.
-
----
-
-## FR6: Recommendation Explanation
-
-Each candidate listing shall include a rationale explaining why it was surfaced.
-
-### Example Rationales
-
-- Similar to previous purchase
-- Vintage mechanical watch
-- Within budget
-- Matches preferred style
-
-The rationale must be human-readable.
-
----
-
-## FR7: Listing Exploration
+## FR5: Search and Sorting
 
 Users shall be able to:
 
-- Sort listings
+- Search listings by keyword
+- Sort by total cost
+- Sort by listing title
+- Sort by marketplace source
+
+---
+
+## FR6: Curated Watch Lists
+
+Users shall be able to save watch listings to curated collections.
+
+### Example Lists
+
+- Potential Purchases
+- Vintage Finds
+- Timex Collection
+- Favorites
+
+Users may create custom list names.
+
+A watch may belong to multiple lists.
+
+---
+
+## FR7: List Management
+
+Users shall be able to:
+
+- Create a new list
+- View all lists
+- Add watches to a list
+- Remove watches from a list
+- View watches within a specific list
+
+---
+
+## FR8: Listing Exploration
+
+Users shall be able to:
+
 - Expand listing details
-- Navigate to original listing source
+- Navigate to the original marketplace listing
+- Review saved watches across lists
 
 ---
 
@@ -183,28 +195,21 @@ Users shall be able to:
 
 - Application loads within 3 seconds
 - Filters update within 1 second
+- List operations complete instantly from the user's perspective
 
 ---
 
 ## Usability
 
 - Interface should require minimal onboarding
-- Filtering workflow should be intuitive
-- Recommendation rationale should be visible without additional clicks
-
----
-
-## Explainability
-
-Users must understand why candidate watches are surfaced.
-
-The system should prioritize transparency over recommendation complexity.
+- Saving a watch to a list should require minimal effort
+- List creation and management should be intuitive
 
 ---
 
 ## Maintainability
 
-Marketplace ingestion logic shall be decoupled from candidate identification logic to support future marketplace integrations.
+Marketplace ingestion logic shall be decoupled from filtering and list management logic to support future marketplace integrations.
 
 ---
 
@@ -215,9 +220,11 @@ Marketplace ingestion logic shall be decoupled from candidate identification log
 - Representative watch listing dataset
 - Listing display
 - Filtering
-- Candidate identification
-- Recommendation rationale
-- Basic sorting
+- Search
+- Sorting
+- Curated watch lists
+- List management
+- External listing navigation
 
 ---
 
@@ -225,24 +232,40 @@ Marketplace ingestion logic shall be decoupled from candidate identification log
 
 - Live API integrations
 - User accounts
-- Saved watches
-- Personalized learning
+- Persistent cloud storage
+- Automated recommendations
 - Machine learning models
+- Preference learning
 - Alerts and notifications
 
 ---
 
 # Assumptions
 
-- Representative sample data adequately validates user experience.
-- Historical purchases provide sufficient signal for simple candidate identification.
-- Users prefer transparent recommendation logic over opaque ranking systems in the MVP stage.
+- Representative sample data adequately validates the user experience.
+- Users are willing to save interesting watches into collections for future review.
+- User-defined organization provides more value than automated recommendation logic during MVP validation.
 
 ---
 
 # Open Questions
 
-1. Which historical purchase attributes provide the strongest signal?
-2. How should candidate listings be visually highlighted?
-3. Should candidate identification be binary (candidate/not candidate) or ranked?
-4. What additional marketplace sources should be prioritized after MVP validation?
+1. Should watches be allowed in multiple lists simultaneously?
+2. Should default lists be provided during onboarding?
+3. What metadata becomes useful for future personalization efforts?
+4. Which marketplace integrations should be prioritized after MVP validation?
+
+---
+
+# Future Enhancements
+
+Potential future capabilities include:
+
+- Live marketplace integrations
+- Persistent user accounts
+- Watch alerts and notifications
+- Collection sharing
+- Personalized recommendations based on saved lists
+- Automatic clustering of watches by style, brand, or era
+
+The curated list feature creates a foundation for future preference learning while keeping the MVP user-driven and transparent.
