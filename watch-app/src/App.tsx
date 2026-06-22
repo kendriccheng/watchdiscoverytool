@@ -303,8 +303,15 @@ function App() {
       <header className="app-header">
         <div className="app-content app-header__inner">
           <div className="app-header__top">
-            <div>
-              <h1>WatchScout</h1>
+            <div className="app-header__brand-block">
+              <div className="app-header__brand">
+                <img
+                  src="/logos/gemini-watchscout.png"
+                  alt=""
+                  className="app-header__logo"
+                />
+                <h1>WatchScout</h1>
+              </div>
               <p className="app-header__subtitle">
                 Stop checking marketplaces one by one. Scout watches by total
                 cost and save the ones worth your attention.
