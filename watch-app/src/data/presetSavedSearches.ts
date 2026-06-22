@@ -13,7 +13,7 @@ export const presetSavedSearches: SavedSearch[] = [
       sort: "price_low",
       maxPrice: "50",
     },
-    shippingLocation: "M6K1V8",
+    shippingLocation: "M6K 1V8",
     createdAt: "2026-01-01T00:00:00.000Z",
     isPreset: true,
   },

@@ -4,6 +4,7 @@ import type {
   DiscoveryState,
   SavedSearch,
 } from "../types/savedSearch";
+import { getValidPostalCode } from "./shippingEstimate";
 
 export const DEFAULT_DISCOVERY_FILTERS: DiscoveryFilters = {
   condition: "all",
@@ -29,17 +30,26 @@ export function clearDiscoveryState(): DiscoveryState {
 
 /** Maps a saved search into discovery state ready to apply to the UI. */
 export function applySavedSearch(search: SavedSearch): DiscoveryState {
+  const shippingLocation =
+    getValidPostalCode(search.shippingLocation) ??
+    search.shippingLocation.trim();
+
   return {
     searchQuery: search.searchQuery,
     filters: { ...search.filters },
-    shippingLocation: search.shippingLocation,
+    shippingLocation,
   };
+}
+
+function normalizeShippingLocation(location: string): string {
+  return getValidPostalCode(location) ?? location.trim();
 }
 
 function discoveryStatesEqual(a: DiscoveryState, b: DiscoveryState): boolean {
   return (
     a.searchQuery === b.searchQuery &&
-    a.shippingLocation === b.shippingLocation &&
+    normalizeShippingLocation(a.shippingLocation) ===
+      normalizeShippingLocation(b.shippingLocation) &&
     a.filters.condition === b.filters.condition &&
     a.filters.marketplace === b.filters.marketplace &&
     a.filters.sort === b.filters.sort &&

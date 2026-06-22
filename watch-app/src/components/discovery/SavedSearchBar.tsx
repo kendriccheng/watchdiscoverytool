@@ -77,13 +77,13 @@ export default function SavedSearchBar({
         )}
       </div>
 
-      {activeSearch?.description && (
+      {activeSavedSearchId && activeSearch?.description && (
         <p className="saved-search-bar__hint saved-search-bar__hint--active">
           {activeSearch.description}
         </p>
       )}
 
-      {isCustomSearch && !activeSearch && (
+      {isCustomSearch && (
         <p className="saved-search-bar__hint">
           Custom search — adjust filters or save this lens for next time.
         </p>

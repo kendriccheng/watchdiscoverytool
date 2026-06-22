@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ListingsGrid from "./components/listings/ListingsGrid";
+import ListingsGridSkeleton from "./components/listings/ListingsGridSkeleton";
 import ListSection from "./components/listings/ListSection";
 import SaveToListModal from "./components/listings/SaveToListModal";
 import SavedSearchBar from "./components/discovery/SavedSearchBar";
@@ -14,9 +15,10 @@ import {
   Tab,
   TabBar,
 } from "./components/ui";
-import { mockListings } from "./data/mockListings";
+import { createMockListings } from "./data/mockListings";
 import type { WatchListing } from "./data/mockListings";
 import { useDebouncedValue } from "./hooks/useDebouncedValue";
+import { useInitialLoadDelay } from "./hooks/useInitialLoadDelay";
 import { useSavedSearches } from "./hooks/useSavedSearches";
 import type {
   ConditionFilter,
@@ -45,6 +47,10 @@ import {
 function App() {
   const { allSavedSearches, getSearchById, saveSearch, deleteSearch } =
     useSavedSearches();
+
+  const isInitialLoading = useInitialLoadDelay();
+
+  const [mockListings] = useState(() => createMockListings());
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -109,9 +115,7 @@ function App() {
     const next = applySavedSearch(search);
     setSearchQuery(next.searchQuery);
     setFilters(next.filters);
-    setShippingLocation(
-      getValidPostalCode(next.shippingLocation) ?? next.shippingLocation
-    );
+    setShippingLocation(next.shippingLocation);
     setPostalFieldTouched(false);
     setActiveSavedSearchId(search.id);
   };
@@ -494,8 +498,10 @@ function App() {
           </div>
 
           <div className="app-content results-meta">
-            {filteredListings.length} watches found
-            {activeSavedSearch && (
+            {isInitialLoading
+              ? "Searching watches…"
+              : `${filteredListings.length} watches found`}
+            {!isInitialLoading && activeSavedSearch && (
               <span> · Lens: {activeSavedSearch.name}</span>
             )}
           </div>
@@ -507,7 +513,9 @@ function App() {
       >
         {view === "discover" ? (
           <>
-            {filteredListings.length === 0 ? (
+            {isInitialLoading ? (
+              <ListingsGridSkeleton />
+            ) : filteredListings.length === 0 ? (
               <EmptyState
                 icon="search"
                 title="No watches found"
@@ -543,6 +551,7 @@ function App() {
                 isSaved={isSaved}
                 onSave={(watch) => setPendingWatch(watch)}
                 lists={lists}
+                className="listings-grid--loaded"
               />
             )}
           </>

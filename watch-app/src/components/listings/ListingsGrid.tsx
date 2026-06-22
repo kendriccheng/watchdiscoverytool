@@ -7,6 +7,7 @@ type Props = {
   onSave: (watch: WatchListing) => void;
   lists: Record<string, WatchListing[]>;
   onRemove?: (watch: WatchListing) => void;
+  className?: string;
 };
 
 export default function ListingsGrid({
@@ -14,9 +15,12 @@ export default function ListingsGrid({
   isSaved,
   onSave,
   lists,
+  className,
 }: Props) {
   return (
-    <div className="listings-grid">
+    <div
+      className={className ? `listings-grid ${className}` : "listings-grid"}
+    >
       {watches.map((watch) => (
         <WatchCard
           key={watch.id}

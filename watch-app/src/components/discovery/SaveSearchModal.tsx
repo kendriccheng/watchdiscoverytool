@@ -51,8 +51,8 @@ export default function SaveSearchModal({
 
   return (
     <Modal
-      title="Save discovery lens"
-      description="Save your current filters and search as a reusable lens you can apply with one click."
+      title="Save your search"
+      description="Save your current filters and search so you can revisit in the future with one click."
       onClose={onClose}
       footer={
         <>
@@ -62,7 +62,7 @@ export default function SaveSearchModal({
             disabled={!canSave}
             onClick={handleSubmit}
           >
-            Save lens
+            Save
           </Button>
           <Button variant="secondary" block onClick={onClose}>
             Cancel
@@ -98,7 +98,7 @@ export default function SaveSearchModal({
         </FieldLabel>
         <Input
           id="lens-description"
-          placeholder="What is this lens for?"
+          placeholder="Add a description for your saved search"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />

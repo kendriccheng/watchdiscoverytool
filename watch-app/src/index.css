@@ -1488,7 +1488,17 @@ textarea.input:focus {
   margin: 0;
   font-size: var(--text-xs);
   color: var(--text-muted);
+}
+
+.watch-card__condition {
   text-transform: capitalize;
+}
+
+.watch-card__marketplace {
+  color: var(--accent-hover);
+  text-decoration: underline;
+  text-transform: uppercase;
+  text-underline-offset: 2px;
 }
 
 .watch-card__pricing {
@@ -1583,6 +1593,90 @@ textarea.input:focus {
 .btn--primary .watch-card__saved-mark {
   color: var(--color-success-soft);
   font-weight: 700;
+}
+
+/* Skeleton loading */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes listings-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.skeleton {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--surface-muted) 0%,
+    var(--surface-inset) 45%,
+    var(--surface-muted) 90%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.watch-card--skeleton {
+  pointer-events: none;
+}
+
+.watch-card__skeleton-title {
+  height: 0.875rem;
+  width: 88%;
+}
+
+.watch-card__skeleton-meta {
+  height: 0.6875rem;
+  width: 55%;
+}
+
+.watch-card__skeleton-line {
+  height: 0.6875rem;
+  width: 100%;
+}
+
+.watch-card__skeleton-total {
+  height: 0.75rem;
+  width: 100%;
+}
+
+.watch-card__skeleton-description {
+  height: 0.6875rem;
+  width: 72%;
+  margin-top: var(--space-1);
+}
+
+.watch-card__skeleton-button {
+  height: var(--control-height-sm);
+  width: 5.625rem;
+  border-radius: var(--radius-sm);
+}
+
+.listings-grid--loaded {
+  animation: listings-fade-in 300ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    background: var(--surface-muted);
+  }
+
+  .listings-grid--loaded {
+    animation: none;
+  }
 }
 
 /* Global focus & motion preferences */

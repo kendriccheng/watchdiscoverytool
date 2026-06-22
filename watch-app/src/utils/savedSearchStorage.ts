@@ -1,5 +1,6 @@
 import type { SavedSearch } from "../types/savedSearch";
 import { presetSavedSearches } from "../data/presetSavedSearches";
+import { getValidPostalCode } from "./shippingEstimate";
 
 export const SAVED_SEARCHES_STORAGE_KEY = "watch-discovery:saved-searches:v1";
 
@@ -46,9 +47,16 @@ export function loadUserSavedSearches(): SavedSearch[] {
       return [];
     }
 
-    return parsed.userSearches.filter(
-      (search) => isSavedSearch(search) && !isPresetSavedSearchId(search.id)
-    );
+    return parsed.userSearches
+      .filter(
+        (search) => isSavedSearch(search) && !isPresetSavedSearchId(search.id)
+      )
+      .map((search) => ({
+        ...search,
+        shippingLocation:
+          getValidPostalCode(search.shippingLocation) ??
+          search.shippingLocation.trim(),
+      }));
   } catch {
     return [];
   }
@@ -79,13 +87,16 @@ export function createUserSavedSearch(input: {
   filters: SavedSearch["filters"];
   shippingLocation: string;
 }): SavedSearch {
+  const shippingLocation =
+    getValidPostalCode(input.shippingLocation) ?? input.shippingLocation.trim();
+
   return {
     id: crypto.randomUUID(),
     name: input.name.trim(),
     description: input.description?.trim() || undefined,
     searchQuery: input.searchQuery,
     filters: { ...input.filters },
-    shippingLocation: input.shippingLocation,
+    shippingLocation,
     createdAt: new Date().toISOString(),
     isPreset: false,
   };

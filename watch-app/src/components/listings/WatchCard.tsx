@@ -36,7 +36,12 @@ export default function WatchCard({
           <div className="watch-card__header">
             <h3 className="watch-card__title">{watch.title}</h3>
             <p className="watch-card__meta">
-              {watch.marketplace.toUpperCase()} · {watch.condition}
+              Sold by:{" "}
+              <span className="watch-card__marketplace">
+                {watch.marketplace.toUpperCase()}
+              </span>
+              {" · "}
+              <span className="watch-card__condition">{watch.condition}</span>
             </p>
           </div>
 
